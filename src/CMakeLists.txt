@@ -74,6 +74,30 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     $<$<BOOL:${BUILD_HUSKARUI_STATIC_LIBRARY}>:HuskarUIBasicPlugin>
 )
 
+# Copy HuskarUI DLLs to output directory after build
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:HuskarUIBasic>
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+    COMMENT "Copying HuskarUI DLL to output directory"
+)
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:huskaruibasicplugin>
+        ${HUSKARUI_PLUGIN_OUTPUT_DIRECTORY}
+    COMMENT "Copying HuskarUI plugin to output directory"
+)
+
+# Copy HuskarUI QML module files to output directory
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E rm -rf ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/HuskarUI
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_BINARY_DIR}/HuskarUI/qml/HuskarUI
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/HuskarUI
+    COMMENT "Copying HuskarUI QML modules to output directory"
+)
+
 # from build output import <HuskarUI.Basic>
 if(NOT HUSKARUI_PLUGIN_OUTPUT_DIRECTORY)
     set(QML_IMPORT_PATH ${CMAKE_BINARY_DIR}/HuskarUI/qml CACHE STRING "" FORCE)
