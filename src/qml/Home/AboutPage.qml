@@ -18,7 +18,7 @@ HusWindow {
             width: 16
             height: 16
             anchors.centerIn: parent
-            source: 'qrc:/Gallery/images/huskarui_icon.svg'
+            source: 'qrc:/Gallery/resources/images/YEFS.svg'
         }
     }
     captionBar.closeCallback: () => aboutLoader.visible = false;
@@ -46,8 +46,8 @@ HusWindow {
 
             ShaderEffect {
                 anchors.fill: parent
-                vertexShader: 'qrc:/Gallery/shaders/effect2.vert.qsb'
-                fragmentShader: 'qrc:/Gallery/shaders/effect2.frag.qsb'
+                vertexShader: 'qrc:/Gallery/resources/shaders/effect2.vert.qsb'
+                fragmentShader: 'qrc:/Gallery/resources/shaders/effect2.frag.qsb'
                 opacity: 0.5
 
                 property vector3d iResolution: Qt.vector3d(width, height, 0)
@@ -77,7 +77,7 @@ HusWindow {
                     width: parent.width
                     height: width
                     anchors.centerIn: parent
-                    source: 'qrc:/Gallery/images/huskarui_icon.svg'
+                    source: 'qrc:/Gallery/resources/images/YEFS.svg'
                 }
             }
 

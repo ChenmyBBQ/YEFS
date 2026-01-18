@@ -9,8 +9,8 @@ Rectangle {
 
     ShaderEffect {
         anchors.fill: parent
-        vertexShader: 'qrc:/Gallery/shaders/effect1.vert.qsb'
-        fragmentShader: 'qrc:/Gallery/shaders/effect1.frag.qsb'
+        vertexShader: 'qrc:/Gallery/resources/shaders/effect1.vert.qsb'
+        fragmentShader: 'qrc:/Gallery/resources/shaders/effect1.frag.qsb'
         opacity: 0.5
 
         property vector3d iResolution: Qt.vector3d(width, height, 0)
@@ -221,7 +221,7 @@ Rectangle {
                         width: parent.width
                         height: width
                         anchors.centerIn: parent
-                        source: 'qrc:/Gallery/images/huskarui_icon.svg'
+                        source: 'qrc:/Gallery/resources/images/YEFS.svg'
                     }
 
                     DropShadow {
