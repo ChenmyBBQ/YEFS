@@ -28,7 +28,7 @@ HusWindow {
             width: 16
             height: 16
             anchors.centerIn: parent
-            source: 'qrc:/Gallery/images/huskarui_icon.svg'
+            source: 'qrc:/Gallery/resources/images/YEFS.svg'
         }
     }
     captionBar.themeCallback: () => {

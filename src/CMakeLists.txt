@@ -36,7 +36,7 @@ qt_add_qml_module(${PROJECT_NAME}
 qt_add_resources(${PROJECT_NAME} "images"
     PREFIX "/Gallery"
     FILES
-        resources/images/huskarui_icon.svg
+    resources/images/YEFS.svg
         resources/images/switch_effect1.jpg
         resources/images/switch_effect2.jpg
 )
