@@ -39,3 +39,10 @@
 
 # debug information files
 *.dwo
+
+# Build output directories
+build/
+out/
+cmake-build*/
+.idea/
+src/.qmlls.ini
