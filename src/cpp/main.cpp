@@ -2,6 +2,8 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQuickWindow>
+#include <QMapLibre/Utils>
+#include <QLoggingCategory>
 
 #ifdef BUILD_HUSKARUI_STATIC_LIBRARY
 #include <QtQml/qqmlextensionplugin.h>
@@ -13,16 +15,30 @@ Q_IMPORT_QML_PLUGIN(HuskarUI_BasicPlugin)
 
 int main(int argc, char *argv[])
 {
-    QQuickWindow::setGraphicsApi(QSGRendererInterface::OpenGL);
-    QQuickWindow::setDefaultAlphaBuffer(true);
+    // Fix for MapLibre assertion failure on Linux Debug builds
+    qputenv("QSG_RENDER_LOOP", "basic");
+
+    QLoggingCategory::setFilterRules(
+        "qt.location.*.debug=true\n"
+        "qt.positioning.*.debug=true\n"
+        "maplibre.*.debug=true");
+
+    const QMapLibre::RendererType rendererType = QMapLibre::supportedRendererType();
+    auto graphicsApi = static_cast<QSGRendererInterface::GraphicsApi>(rendererType);
+    QQuickWindow::setGraphicsApi(graphicsApi);
+    // QQuickWindow::setDefaultAlphaBuffer(true);
 
     QGuiApplication app(argc, argv);
+    app.addLibraryPath(app.applicationDirPath());
+    
     app.setOrganizationName("MenPenS");
     app.setApplicationName("HuskarUI");
     app.setApplicationDisplayName("HuskarUI Gallery");
     app.setApplicationVersion(HusApp::libVersion());
 
     QQmlApplicationEngine engine;
+    // Ensure the application can find the QML modules in the bin directory
+    engine.addImportPath(app.applicationDirPath());
 
     HusApp::initialize(&engine);
     CustomTheme::instance()->registerAll();

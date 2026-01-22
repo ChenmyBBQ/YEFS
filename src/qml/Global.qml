@@ -22,7 +22,7 @@ QtObject {
         },
         {
             key: 'General',
-            label: qsTr('通用'),
+            label: qsTr('地图'),
             iconSource: HusIcon.ProductOutlined,
             menuChildren: [
                 {
@@ -117,7 +117,7 @@ QtObject {
         },
         {
             key: 'Layout',
-            label: qsTr('布局'),
+            label: qsTr('航线'),
             iconSource: HusIcon.BarsOutlined,
             menuChildren: [
                 {
@@ -169,7 +169,7 @@ QtObject {
         },
         {
             key: 'DataEntry',
-            label: qsTr('数据录入'),
+            label: qsTr('图标'),
             iconSource: HusIcon.InsertRowBelowOutlined,
             menuChildren: [
                 {

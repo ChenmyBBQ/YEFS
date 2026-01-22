@@ -5,7 +5,7 @@ project(YEFS VERSION 0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Quick)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Quick Location)
 
 qt_standard_project_setup(REQUIRES 6.5)
 
@@ -70,7 +70,10 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Quick
+    Qt6::Location
     HuskarUIBasic
+    QMapLibre::Core
+    QMapLibre::Location
     $<$<BOOL:${BUILD_HUSKARUI_STATIC_LIBRARY}>:HuskarUIBasicPlugin>
 )
 
@@ -97,6 +100,43 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/HuskarUI
     COMMENT "Copying HuskarUI QML modules to output directory"
 )
+
+# Ensure MapLibre plugin is built and copied
+if(TARGET qtgeoservices_maplibre)
+    add_dependencies(${PROJECT_NAME} qtgeoservices_maplibre)
+
+    # Copy MapLibre GeoServices plugin
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/geoservices
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_FILE:qtgeoservices_maplibre>
+            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/geoservices
+        COMMENT "Copying MapLibre GeoServices plugin"
+    )
+endif()
+
+# Ensure MapLibre QML modules are built and copied
+if(TARGET declarative_maplibre)
+    add_dependencies(${PROJECT_NAME} declarative_maplibre)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/MapLibre
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_BINARY_DIR}/3rdparty/maplibre-native-qt/src/quick/plugins/MapLibre
+            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/MapLibre
+        COMMENT "Copying MapLibre QML module"
+    )
+endif()
+
+if(TARGET declarative_maplibre_locationplugin)
+    add_dependencies(${PROJECT_NAME} declarative_maplibre_locationplugin)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/MapLibre/Location
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+            ${CMAKE_BINARY_DIR}/3rdparty/maplibre-native-qt/src/location/plugins/MapLibre/Location
+            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/MapLibre/Location
+        COMMENT "Copying MapLibre Location QML module"
+    )
+endif()
 
 # from build output import <HuskarUI.Basic>
 if(NOT HUSKARUI_PLUGIN_OUTPUT_DIRECTORY)

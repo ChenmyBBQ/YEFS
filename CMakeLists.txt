@@ -18,8 +18,56 @@ set(BUILD_HUSKARUI_STATIC_LIBRARY OFF)
 set(BUILD_HUSKARUI_ON_DESKTOP_PLATFORM ON)
 set(INSTALL_HUSKARUI_IN_DEFAULT_LOCATION ON)
 
+# MapLibre Native Qt options
+set(MLN_QT_WITH_LOCATION ON)
+set(MLN_QT_WITH_WIDGETS OFF)
+set(MLN_QT_WITH_QUICK_PLUGIN ON)
+set(MLN_WITH_OPENGL ON)
+
 # Build third-party dependencies
 add_subdirectory(3rdparty/HuskarUI)
+add_subdirectory(3rdparty/maplibre-native-qt)
+
+# Fix MapLibre include paths from the top-level project
+if(TARGET MLNQtLocation)
+    target_include_directories(MLNQtLocation PRIVATE
+        ${CMAKE_SOURCE_DIR}/3rdparty/maplibre-native-qt/src/core
+        ${CMAKE_SOURCE_DIR}/3rdparty/maplibre-native-qt/src/core/style
+        ${CMAKE_SOURCE_DIR}/3rdparty/maplibre-native-qt/src/quick
+        ${CMAKE_BINARY_DIR}/3rdparty/maplibre-native-qt/src/core/include
+    )
+endif()
+if(TARGET MLNQtQuickPrivate)
+    target_include_directories(MLNQtQuickPrivate PRIVATE
+        ${CMAKE_SOURCE_DIR}/3rdparty/maplibre-native-qt/src/quick
+        ${CMAKE_BINARY_DIR}/3rdparty/maplibre-native-qt/src/quick/include
+    )
+endif()
+if(TARGET declarative_maplibre)
+    target_include_directories(declarative_maplibre PRIVATE
+        ${CMAKE_SOURCE_DIR}/3rdparty/maplibre-native-qt/src/quick
+        ${CMAKE_BINARY_DIR}/3rdparty/maplibre-native-qt/src/quick/include
+        ${CMAKE_SOURCE_DIR}/3rdparty/maplibre-native-qt/src/core
+        ${CMAKE_SOURCE_DIR}/3rdparty/maplibre-native-qt/src/core/style
+        ${CMAKE_BINARY_DIR}/3rdparty/maplibre-native-qt/src/core/include
+    )
+endif()
+
+if(TARGET qtgeoservices_maplibre)
+    target_include_directories(qtgeoservices_maplibre PRIVATE
+        ${CMAKE_SOURCE_DIR}/3rdparty/maplibre-native-qt/src/core
+        ${CMAKE_SOURCE_DIR}/3rdparty/maplibre-native-qt/src/core/style
+        ${CMAKE_BINARY_DIR}/3rdparty/maplibre-native-qt/src/core/include
+    )
+endif()
+
+if(TARGET declarative_maplibre_locationplugin)
+    target_include_directories(declarative_maplibre_locationplugin PRIVATE
+        ${CMAKE_SOURCE_DIR}/3rdparty/maplibre-native-qt/src/core
+        ${CMAKE_SOURCE_DIR}/3rdparty/maplibre-native-qt/src/core/style
+        ${CMAKE_BINARY_DIR}/3rdparty/maplibre-native-qt/src/core/include
+    )
+endif()
 
 #Your project
 add_subdirectory(src)
