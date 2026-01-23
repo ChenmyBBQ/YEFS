@@ -7,7 +7,7 @@ import HuskarUI.Basic
 Rectangle {
     id: root
     color: HusTheme.Primary.colorBgBase
-
+    anchors.margins: 1
     Plugin {
         id: mapPlugin
         name: "maplibre"
@@ -23,18 +23,18 @@ Rectangle {
         anchors.fill: parent
         map.plugin: mapPlugin
         map.center: QtPositioning.coordinate(39.9042, 116.4074) // Beijing
-        map.zoomLevel: 10
+        map.zoomLevel: 2
 
         Component.onCompleted: {
             console.log("Map loaded with plugin:", map.plugin.name)
         }
     }
 
-    // Zoom Controls
+    // Map Controls
     Column {
         anchors.right: parent.right
         anchors.top: parent.top
-        anchors.margins: 20
+        anchors.margins: 15
         spacing: 10
 
         HusIconButton {
@@ -43,7 +43,7 @@ Rectangle {
             
             HusToolTip {
                 visible: parent.hovered
-                text: qsTr('Zoom In')
+                text: qsTr('放大')
             }
         }
 
@@ -53,18 +53,68 @@ Rectangle {
             
             HusToolTip {
                 visible: parent.hovered
-                text: qsTr('Zoom Out')
+                text: qsTr('缩小')
+            }
+        }
+
+        HusIconButton {
+            iconSource: HusIcon.RedoOutlined
+            onClicked: mapView.map.bearing = (mapView.map.bearing + 15) % 360
+            
+            HusToolTip {
+                visible: parent.hovered
+                text: qsTr('顺时针旋转')
+            }
+        }
+
+        HusIconButton {
+            iconSource: HusIcon.UndoOutlined
+            onClicked: mapView.map.bearing = (mapView.map.bearing - 15 + 360) % 360
+            
+            HusToolTip {
+                visible: parent.hovered
+                text: qsTr('逆时针旋转')
+            }
+        }
+
+        HusIconButton {
+            iconSource: HusIcon.CompassOutlined
+            onClicked: mapView.map.bearing = 0
+            
+            HusToolTip {
+                visible: parent.hovered
+                text: qsTr('重置方向')
             }
         }
     }
 
-    HusText {
+    // Info panel
+    Column {
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.margins: 10
-        text: qsTr('Zoom: ') + mapView.map.zoomLevel.toFixed(1)
-        color: HusTheme.Primary.colorTextBase
-        style: Text.Outline
-        styleColor: HusTheme.Primary.colorBgBase
+        spacing: 4
+
+        HusText {
+            text: qsTr('缩放: ') + mapView.map.zoomLevel.toFixed(1)
+            color: HusTheme.Primary.colorTextBase
+            style: Text.Outline
+            styleColor: HusTheme.Primary.colorBgBase
+        }
+
+        HusText {
+            text: qsTr('方向: ') + mapView.map.bearing.toFixed(1) + '°'
+            color: HusTheme.Primary.colorTextBase
+            style: Text.Outline
+            styleColor: HusTheme.Primary.colorBgBase
+        }
+
+        HusText {
+            text: qsTr('提示: Shift+滚轮旋转, Ctrl+滚轮倾斜')
+            color: HusTheme.Primary.colorTextBase
+            style: Text.Outline
+            styleColor: HusTheme.Primary.colorBgBase
+            font.pixelSize: 10
+        }
     }
 }

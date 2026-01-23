@@ -11,9 +11,9 @@ HusWindow {
     id: galleryWindow
     width: 1300
     height: 850
-    opacity: 0
-    minimumWidth: 800
-    minimumHeight: 600
+    opacity: Qt.platform.os === 'linux' ? 1 : 0
+    minimumWidth: 380
+    minimumHeight: 400
     title: qsTr(`${HusApp.libName()} Gallery`)
     followThemeSwitch: true
     captionBar.visible: Qt.platform.os === 'windows' || Qt.platform.os === 'linux' || Qt.platform.os === 'osx'
@@ -82,14 +82,55 @@ HusWindow {
 
     property var galleryGlobal: Global { }
 
-    Behavior on opacity { NumberAnimation { } }
+    // 记录初始宽度，用于计算导航模式切换阈值
+    property real initialWidth: 1300
+    property bool autoNavMode: true  // 是否启用自动导航模式切换
+
+    // 根据窗口宽度自动切换导航模式
+    onWidthChanged: {
+        if (!autoNavMode) return;
+        
+        const ratio = width / initialWidth;
+        if (ratio <= 1/2) {
+            // 宽度小于等于原来的一半 → 紧凑模式
+            if (galleryMenu.compactMode !== HusMenu.Mode_Compact) {
+                galleryMenu.compactMode = HusMenu.Mode_Compact;
+            }
+        } else if (ratio <= 3/4) {
+            // 宽度小于等于原来的四分之三 → 标准模式
+            if (galleryMenu.compactMode !== HusMenu.Mode_Standard) {
+                galleryMenu.compactMode = HusMenu.Mode_Standard;
+            }
+        } else {
+            // 宽度大于原来的四分之三 → 宽松模式
+            if (galleryMenu.compactMode !== HusMenu.Mode_Relaxed) {
+                galleryMenu.compactMode = HusMenu.Mode_Relaxed;
+            }
+        }
+    }
+
+    Behavior on opacity { 
+        enabled: Qt.platform.os !== 'linux'
+        NumberAnimation { } 
+    }
 
     Timer {
-        running: true
+        running: Qt.platform.os !== 'linux'
         interval: 200
         onTriggered: {
             galleryWindow.opacity = 1;
         }
+    }
+
+    Rectangle {
+        id: linuxWindowBorder
+        anchors.fill: parent
+        color: "transparent"
+        border.width: 1
+        border.color: HusTheme.isDark ? "#333333" : "#E0E0E0"
+        radius: HusTheme.Primary.radiusPrimary
+        z: 99999
+        visible: Qt.platform.os === 'linux'
     }
 
     Rectangle {
@@ -456,7 +497,7 @@ HusWindow {
             anchors.right: parent.right
             anchors.top: parent.top
             anchors.bottom: parent.bottom
-            anchors.margins: 5
+            anchors.margins: 0
             clip: true
 
             property string source: ''

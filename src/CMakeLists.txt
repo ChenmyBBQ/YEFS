@@ -21,7 +21,8 @@ qt_add_executable(${PROJECT_NAME}
 )
 
 # QML 文件
-file(GLOB_RECURSE QML_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} CONFIGURE_DEPENDS "qml/*.qml")
+# Use explicit list or avoid CONFIGURE_DEPENDS if not needed to prevent re-configure
+file(GLOB_RECURSE QML_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "qml/*.qml")
 
 qt_add_qml_module(${PROJECT_NAME}
     URI Gallery

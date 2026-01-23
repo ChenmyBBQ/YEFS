@@ -26,7 +26,11 @@ int main(int argc, char *argv[])
     const QMapLibre::RendererType rendererType = QMapLibre::supportedRendererType();
     auto graphicsApi = static_cast<QSGRendererInterface::GraphicsApi>(rendererType);
     QQuickWindow::setGraphicsApi(graphicsApi);
-    // QQuickWindow::setDefaultAlphaBuffer(true);
+
+#ifndef QT_DEBUG
+    // Enable Alpha Buffer in Release to support rounded corners/transparency
+    QQuickWindow::setDefaultAlphaBuffer(true);
+#endif
 
     QGuiApplication app(argc, argv);
     app.addLibraryPath(app.applicationDirPath());
