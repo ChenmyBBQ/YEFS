@@ -78,6 +78,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     $<$<BOOL:${BUILD_HUSKARUI_STATIC_LIBRARY}>:HuskarUIBasicPlugin>
 )
 
+# Ensure HuskarUI plugins are built before the main target
+add_dependencies(${PROJECT_NAME} huskaruibasicplugin huskaruiimplplugin)
+
 # Copy HuskarUI DLLs to output directory after build
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -90,7 +93,14 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         $<TARGET_FILE:huskaruibasicplugin>
         ${HUSKARUI_PLUGIN_OUTPUT_DIRECTORY}
-    COMMENT "Copying HuskarUI plugin to output directory"
+    COMMENT "Copying HuskarUI Basic plugin to output directory"
+)
+
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:huskaruiimplplugin>
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/HuskarUI/Impl
+    COMMENT "Copying HuskarUI Impl plugin to output directory"
 )
 
 # Copy HuskarUI QML module files to output directory

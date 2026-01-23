@@ -1,4 +1,3 @@
-
 cmake_minimum_required(VERSION 3.16)
 
 project(YEFS_Solution)
@@ -12,6 +11,9 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out/${CMAKE_BUILD_TYPE}/l
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out/${CMAKE_BUILD_TYPE}/lib)
 
 set(HUSKARUI_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/out/${CMAKE_BUILD_TYPE})
+# IMPORTANT: point to a common HuskarUI root so both QML modules end up in:
+#   <bin>/HuskarUI/Basic and <bin>/HuskarUI/Impl
+# HuskarUI's src_impl computes Impl output as ${HUSKARUI_PLUGIN_OUTPUT_DIRECTORY}/../Impl
 set(HUSKARUI_PLUGIN_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/HuskarUI/Basic)
 
 set(BUILD_HUSKARUI_STATIC_LIBRARY OFF)
