@@ -48,21 +48,32 @@ private:
     /**
      * @brief Parse configuration key into category and key parts
      * @param key Configuration key in format "category.key" or just "key"
-     * @return Pair of (category, key). If no category specified, returns ("plugins", key)
+     *            Note: Nested categories (e.g., "category.sub.key") are not supported.
+     *                  If more than one dot is present, everything after the first dot
+     *                  is treated as the key name.
+     * @return Pair of (category, key). If no category specified, returns ("plugins", key).
+     *         If key is empty/invalid, returns ("plugins", original_key) and logs a warning.
      */
     std::pair<QString, QString> parseConfigKey(const QString& key) const {
-        QStringList parts = key.split('.', Qt::SkipEmptyParts);
+        if (key.isEmpty()) {
+            qWarning() << "[PluginContext] Empty config key provided";
+            return {"plugins", QString()};
+        }
         
-        // Validate and parse the key
-        if (parts.size() == 2 && !parts[0].isEmpty() && !parts[1].isEmpty()) {
-            return {parts[0], parts[1]};
-        } else if (parts.size() == 1 && !parts[0].isEmpty()) {
-            // If no category specified, use "plugins" as default category
-            return {"plugins", parts[0]};
+        int dotIndex = key.indexOf('.');
+        
+        if (dotIndex > 0 && dotIndex < key.length() - 1) {
+            // Split at first dot: "category.key.more" -> ("category", "key.more")
+            QString category = key.left(dotIndex);
+            QString configKey = key.mid(dotIndex + 1);
+            return {category, configKey};
+        } else if (dotIndex == -1) {
+            // No dot found, use default category
+            return {"plugins", key};
         } else {
-            // Invalid key format, return defaults
+            // Dot at start or end (e.g., ".key" or "key.")
             qWarning() << "[PluginContext] Invalid config key format:" << key;
-            return {"plugins", "invalid_key"};
+            return {"plugins", key};
         }
     }
 };
