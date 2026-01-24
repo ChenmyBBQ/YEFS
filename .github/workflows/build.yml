@@ -1,12 +1,13 @@
 name: Build and Package
 
 on:
+  # dev 合并到 main 时触发
   push:
-    branches: [ main, dev ]
+    branches: [ main ]
+  # dev 或 main 打标签时触发
     tags:
       - 'v*'
-  pull_request:
-    branches: [ main, dev ]
+  # 手动触发
   workflow_dispatch:
 
 env:
