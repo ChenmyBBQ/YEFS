@@ -121,6 +121,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/core
     ${CMAKE_CURRENT_SOURCE_DIR}/cpp
+    ${CMAKE_SOURCE_DIR}/3rdparty/HuskarUI/src/cpp
 )
 
 # ============================================================================
