@@ -35,23 +35,34 @@ public:
     }
 
     QVariant getConfig(const QString& key, const QVariant& defaultValue) override {
-        // Parse key as "category.key" format
-        QStringList parts = key.split('.');
-        if (parts.size() == 2) {
-            return SettingsManager::instance()->getValue(parts[0], parts[1], defaultValue);
-        }
-        // If no category specified, use "plugins" as default category
-        return SettingsManager::instance()->getValue("plugins", key, defaultValue);
+        auto [category, configKey] = parseConfigKey(key);
+        return SettingsManager::instance()->getValue(category, configKey, defaultValue);
     }
 
     void setConfig(const QString& key, const QVariant& value) override {
-        // Parse key as "category.key" format
-        QStringList parts = key.split('.');
-        if (parts.size() == 2) {
-            SettingsManager::instance()->setValue(parts[0], parts[1], value);
-        } else {
+        auto [category, configKey] = parseConfigKey(key);
+        SettingsManager::instance()->setValue(category, configKey, value);
+    }
+
+private:
+    /**
+     * @brief Parse configuration key into category and key parts
+     * @param key Configuration key in format "category.key" or just "key"
+     * @return Pair of (category, key). If no category specified, returns ("plugins", key)
+     */
+    std::pair<QString, QString> parseConfigKey(const QString& key) const {
+        QStringList parts = key.split('.', Qt::SkipEmptyParts);
+        
+        // Validate and parse the key
+        if (parts.size() == 2 && !parts[0].isEmpty() && !parts[1].isEmpty()) {
+            return {parts[0], parts[1]};
+        } else if (parts.size() == 1 && !parts[0].isEmpty()) {
             // If no category specified, use "plugins" as default category
-            SettingsManager::instance()->setValue("plugins", key, value);
+            return {"plugins", parts[0]};
+        } else {
+            // Invalid key format, return defaults
+            qWarning() << "[PluginContext] Invalid config key format:" << key;
+            return {"plugins", "invalid_key"};
         }
     }
 };
