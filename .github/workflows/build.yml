@@ -120,7 +120,7 @@ jobs:
         New-Item -ItemType Directory -Force -Path package/YEFS
         Copy-Item -Recurse out/${{ env.BUILD_TYPE }}/bin/* package/YEFS/
         # Run windeployqt
-        & "$env:Qt6_DIR/bin/windeployqt.exe" package/YEFS/YEFS.exe --qmldir src/qml
+        & "$env:QT_ROOT_DIR/bin/windeployqt.exe" package/YEFS/YEFS.exe --qmldir src/qml
         Compress-Archive -Path package/YEFS -DestinationPath package/YEFS-windows-x64.zip
 
     - name: Upload Artifact

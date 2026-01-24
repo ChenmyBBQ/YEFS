@@ -12,49 +12,22 @@ Q_IMPORT_QML_PLUGIN(HuskarUI_BasicPlugin)
 
 #include "customtheme.h"
 #include "husapp.h"
+#include "Application.h"
 
 int main(int argc, char *argv[])
 {
-    // Fix for MapLibre assertion failure on Linux Debug builds
-    qputenv("QSG_RENDER_LOOP", "basic");
-
-    QLoggingCategory::setFilterRules(
-        "qt.location.*.debug=true\n"
-        "qt.positioning.*.debug=true\n"
-        "maplibre.*.debug=true");
-
-    const QMapLibre::RendererType rendererType = QMapLibre::supportedRendererType();
-    auto graphicsApi = static_cast<QSGRendererInterface::GraphicsApi>(rendererType);
-    QQuickWindow::setGraphicsApi(graphicsApi);
-
-#ifndef QT_DEBUG
-    // Enable Alpha Buffer in Release to support rounded corners/transparency
-    QQuickWindow::setDefaultAlphaBuffer(true);
-#endif
-
     QGuiApplication app(argc, argv);
     app.addLibraryPath(app.applicationDirPath());
+
+    // 创建并初始化 YEFS 应用
+    YEFS::Application yefsApp(&app);
     
-    app.setOrganizationName("MenPenS");
-    app.setApplicationName("HuskarUI");
-    app.setApplicationDisplayName("HuskarUI Gallery");
-    app.setApplicationVersion(HusApp::libVersion());
+    if (!yefsApp.initialize()) {
+        return -1;
+    }
 
-    QQmlApplicationEngine engine;
-    // Ensure the application can find the QML modules in the bin directory
-    engine.addImportPath(app.applicationDirPath());
-
-    HusApp::initialize(&engine);
+    // 注册自定义主题
     CustomTheme::instance()->registerAll();
 
-    const QUrl url = QUrl(QStringLiteral("qrc:/Gallery/qml/Gallery.qml"));
-    QObject::connect(&engine, &QQmlApplicationEngine::objectCreated,
-        &app, [url](QObject *obj, const QUrl &objUrl) {
-            if (!obj && url == objUrl)
-                QCoreApplication::exit(-1);
-        }, Qt::QueuedConnection);
-    // engine.addImportPath(HUSKARUI_IMPORT_PATH);
-    engine.load(url);
-
-    return app.exec();
+    return yefsApp.run();
 }

@@ -1,50 +1,95 @@
-
 cmake_minimum_required(VERSION 3.16)
 
-project(YEFS VERSION 0.1 LANGUAGES CXX)
+project(YEFS VERSION 0.1.0 LANGUAGES CXX)
 
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Quick Location)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Quick Location Positioning)
 
 qt_standard_project_setup(REQUIRES 6.5)
 
-# C++ 源文件
-qt_add_executable(${PROJECT_NAME}
+# ============================================================================
+# 核心框架源文件
+# ============================================================================
+set(CORE_SOURCES
+    core/Application.cpp
+    core/Application.h
+    core/MessageBus.cpp
+    core/MessageBus.h
+    core/PluginManager.cpp
+    core/PluginManager.h
+    core/MapLibreEngine.cpp
+    core/MapLibreEngine.h
+    core/MapSettings.cpp
+    core/MapSettings.h
+    core/SettingsManager.cpp
+    core/SettingsManager.h
+    core/IMapEngine.h
+    core/IPlugin.h
+)
+
+# 兼容旧代码
+set(LEGACY_SOURCES
     cpp/main.cpp
     cpp/customtheme.cpp
-    cpp/datagenerator.cpp
-    cpp/themeswitchitem.cpp
     cpp/customtheme.h
+    cpp/datagenerator.cpp
     cpp/datagenerator.h
+    cpp/themeswitchitem.cpp
     cpp/themeswitchitem.h
 )
 
-# QML 文件
-# Use explicit list or avoid CONFIGURE_DEPENDS if not needed to prevent re-configure
+# ============================================================================
+# 可执行文件
+# ============================================================================
+qt_add_executable(${PROJECT_NAME}
+    ${CORE_SOURCES}
+    ${LEGACY_SOURCES}
+)
+
+# ============================================================================
+# QML 模块
+# ============================================================================
+
+# 收集所有 QML 文件
 file(GLOB_RECURSE QML_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "qml/*.qml")
 
 qt_add_qml_module(${PROJECT_NAME}
-    URI Gallery
+    URI YEFSApp
     VERSION 1.0
-    OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     RESOURCE_PREFIX "/"
     QML_FILES
         ${QML_FILES}
+    SOURCES
+        core/MessageBus.h
+        core/MessageBus.cpp
+        core/PluginManager.h
+        core/PluginManager.cpp
+        core/MapLibreEngine.h
+        core/MapLibreEngine.cpp
+        core/MapSettings.h
+        core/MapSettings.cpp
+        core/SettingsManager.h
+        core/SettingsManager.cpp
 )
 
-# 图片资源
+# ============================================================================
+# 资源文件
+# ============================================================================
+
 qt_add_resources(${PROJECT_NAME} "images"
-    PREFIX "/Gallery"
+    PREFIX "/YEFSApp"
     FILES
-    resources/images/YEFS.svg
+        resources/images/YEFS.svg
         resources/images/switch_effect1.jpg
         resources/images/switch_effect2.jpg
 )
-  
+
 # 着色器资源
 qt_add_shaders(${PROJECT_NAME} "shaders"
-    PREFIX "/Gallery"
+    PREFIX "/YEFSApp"
     FILES
         resources/shaders/effect1.vert
         resources/shaders/effect1.frag
@@ -52,8 +97,13 @@ qt_add_shaders(${PROJECT_NAME} "shaders"
         resources/shaders/effect2.frag
 )
 
+# ============================================================================
+# 编译配置
+# ============================================================================
+
 target_compile_definitions(${PROJECT_NAME} PRIVATE
     $<$<BOOL:${BUILD_HUSKARUI_STATIC_LIBRARY}>:BUILD_HUSKARUI_STATIC_LIBRARY>
+    YEFS_VERSION="${PROJECT_VERSION}"
 )
 
 set_target_properties(${PROJECT_NAME} PROPERTIES
@@ -63,15 +113,24 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     WIN32_EXECUTABLE TRUE
 )
 
+# ============================================================================
 # 包含目录
+# ============================================================================
+
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/core
     ${CMAKE_CURRENT_SOURCE_DIR}/cpp
 )
+
+# ============================================================================
+# 链接库
+# ============================================================================
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Quick
     Qt6::Location
+    Qt6::Positioning
     HuskarUIBasic
     QMapLibre::Core
     QMapLibre::Location
