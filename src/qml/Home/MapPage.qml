@@ -6,8 +6,9 @@ import HuskarUI.Basic
 
 Rectangle {
     id: root
-    color: HusTheme.Primary.colorBgBase
+    color: "#f8f8f7"
     anchors.margins: 1
+
     Plugin {
         id: mapPlugin
         name: "maplibre"

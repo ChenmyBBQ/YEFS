@@ -1,0 +1,155 @@
+name: Build and Package
+
+on:
+  push:
+    branches: [ main, dev ]
+    tags:
+      - 'v*'
+  pull_request:
+    branches: [ main, dev ]
+  workflow_dispatch:
+
+env:
+  QT_VERSION: '6.8.0'
+  BUILD_TYPE: Release
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-24.04
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: ${{ env.QT_VERSION }}
+        host: 'linux'
+        target: 'desktop'
+        arch: 'linux_gcc_64'
+        modules: 'qtlocation qtpositioning qtshadertools'
+        cache: true
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          build-essential \
+          ninja-build \
+          libgl1-mesa-dev \
+          libxkbcommon-dev \
+          libxcb-cursor0 \
+          libxcb-icccm4 \
+          libxcb-image0 \
+          libxcb-keysyms1 \
+          libxcb-randr0 \
+          libxcb-render-util0 \
+          libxcb-shape0 \
+          libxcb-xinerama0 \
+          libxcb-xfixes0
+
+    - name: Configure CMake
+      run: |
+        cmake -B build \
+          -G Ninja \
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
+          -DCMAKE_PREFIX_PATH=$Qt6_DIR
+
+    - name: Build
+      run: cmake --build build --config ${{ env.BUILD_TYPE }}
+
+    - name: Package
+      run: |
+        mkdir -p package/YEFS
+        cp -r out/${{ env.BUILD_TYPE }}/bin/* package/YEFS/
+        # Copy Qt libraries
+        cd package
+        $Qt6_DIR/bin/linuxdeploy-plugin-qt --appdir YEFS || true
+        tar -czvf YEFS-linux-x64.tar.gz YEFS
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: YEFS-linux-x64
+        path: package/YEFS-linux-x64.tar.gz
+
+  build-windows:
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v4
+      with:
+        version: ${{ env.QT_VERSION }}
+        host: 'windows'
+        target: 'desktop'
+        arch: 'win64_msvc2022_64'
+        modules: 'qtlocation qtpositioning qtshadertools'
+        cache: true
+
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+
+    - name: Configure CMake
+      run: |
+        cmake -B build `
+          -G "Ninja" `
+          -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} `
+          -DCMAKE_PREFIX_PATH="$env:Qt6_DIR"
+
+    - name: Build
+      run: cmake --build build --config ${{ env.BUILD_TYPE }}
+
+    - name: Package
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force -Path package/YEFS
+        Copy-Item -Recurse out/${{ env.BUILD_TYPE }}/bin/* package/YEFS/
+        # Run windeployqt
+        & "$env:Qt6_DIR/bin/windeployqt.exe" package/YEFS/YEFS.exe --qmldir src/qml
+        Compress-Archive -Path package/YEFS -DestinationPath package/YEFS-windows-x64.zip
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: YEFS-windows-x64
+        path: package/YEFS-windows-x64.zip
+
+  release:
+    needs: [build-linux, build-windows]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - name: Download Linux Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: YEFS-linux-x64
+        path: artifacts/
+
+    - name: Download Windows Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: YEFS-windows-x64
+        path: artifacts/
+
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          artifacts/YEFS-linux-x64.tar.gz
+          artifacts/YEFS-windows-x64.zip
+        draft: false
+        prerelease: ${{ contains(github.ref, 'beta') || contains(github.ref, 'alpha') }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
