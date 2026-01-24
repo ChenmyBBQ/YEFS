@@ -1,5 +1,6 @@
 #include "PluginManager.h"
 #include "MessageBus.h"
+#include "SettingsManager.h"
 #include <QCoreApplication>
 #include <QDir>
 #include <QPluginLoader>
@@ -22,6 +23,8 @@ public:
     QObject* getService(const QString& serviceName) override {
         if (serviceName == "MessageBus") {
             return MessageBus::instance();
+        } else if (serviceName == "SettingsManager") {
+            return SettingsManager::instance();
         }
         // 可以添加更多服务
         return nullptr;
@@ -32,15 +35,24 @@ public:
     }
 
     QVariant getConfig(const QString& key, const QVariant& defaultValue) override {
-        // TODO: 实现配置管理
-        Q_UNUSED(key)
-        return defaultValue;
+        // Parse key as "category.key" format
+        QStringList parts = key.split('.');
+        if (parts.size() == 2) {
+            return SettingsManager::instance()->getValue(parts[0], parts[1], defaultValue);
+        }
+        // If no category specified, use "plugins" as default category
+        return SettingsManager::instance()->getValue("plugins", key, defaultValue);
     }
 
     void setConfig(const QString& key, const QVariant& value) override {
-        // TODO: 实现配置管理
-        Q_UNUSED(key)
-        Q_UNUSED(value)
+        // Parse key as "category.key" format
+        QStringList parts = key.split('.');
+        if (parts.size() == 2) {
+            SettingsManager::instance()->setValue(parts[0], parts[1], value);
+        } else {
+            // If no category specified, use "plugins" as default category
+            SettingsManager::instance()->setValue("plugins", key, value);
+        }
     }
 };
 
