@@ -172,7 +172,7 @@ if(CMAKE_BUILD_TYPE MATCHES "Release")
             ${CMAKE_SOURCE_DIR}/package/${PROJECT_NAME}.app
             --qmldir=${CMAKE_CURRENT_LIST_DIR}
         )
-        add_custom_target(Script-DeployRelease
+        add_custom_target(YEFS-DeployRelease
                 COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_SOURCE_DIR}/package
                 COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} ${CMAKE_SOURCE_DIR}/package
                 COMMAND ${QT_DEPLOY_QT} ${QT_DEPLOY_ARGS}
@@ -180,7 +180,7 @@ if(CMAKE_BUILD_TYPE MATCHES "Release")
                 SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt
                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
-        add_dependencies(Script-DeployRelease ${PROJECT_NAME})
+        add_dependencies(YEFS-DeployRelease ${PROJECT_NAME})
     endif()
     if(WIN32)
         find_program(QT_DEPLOY_QT NAMES windeployqt)
@@ -204,7 +204,7 @@ if(CMAKE_BUILD_TYPE MATCHES "Release")
             --compiler-runtime
             ${CMAKE_SOURCE_DIR}/package/${PROJECT_NAME}.exe
         )
-        add_custom_target(Script-DeployRelease
+        add_custom_target(YEFS-DeployRelease
                 COMMAND ${CMAKE_COMMAND} -E remove_directory ${CMAKE_SOURCE_DIR}/package
                 COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} ${CMAKE_SOURCE_DIR}/package
                 COMMAND ${CMAKE_COMMAND} -E rm -f "${CMAKE_SOURCE_DIR}/package/${PROJECT_NAME}.qmltypes"
@@ -215,6 +215,6 @@ if(CMAKE_BUILD_TYPE MATCHES "Release")
                 SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt
                 WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
-        add_dependencies(Script-DeployRelease ${PROJECT_NAME})
+        add_dependencies(YEFS-DeployRelease ${PROJECT_NAME})
     endif()
 endif()
