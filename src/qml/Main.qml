@@ -327,11 +327,43 @@ HusWindow {
                 active: false
                 visible: false
                 source: "./Home/SettingsPage.qml"
+
+                onStatusChanged: {
+                    if (status === Loader.Error) {
+                        console.error("[Settings] Loader error:", errorString());
+                    } else {
+                        console.log("[Settings] Loader status:", status, "active:", active, "visible:", visible);
+                    }
+                }
                 
                 Connections {
                     target: settingsLoader.item
                     function onCloseRequested() { settingsLoader.visible = false }
                     function onApplyRequested() { console.log("[Settings] Apply requested") }
+                }
+            }
+
+            Rectangle {
+                anchors.centerIn: parent
+                width: Math.min(parent.width - 40, 700)
+                height: settingsErrorText.implicitHeight + 24
+                radius: HusTheme.Primary.radiusPrimary
+                color: HusThemeFunctions.alpha(HusTheme.Primary.colorError, 0.08)
+                border.color: HusTheme.Primary.colorError
+                visible: settingsLoader.visible && settingsLoader.status === Loader.Error
+                z: 999
+
+                HusText {
+                    id: settingsErrorText
+                    anchors.centerIn: parent
+                    width: parent.width - 24
+                    wrapMode: HusText.WrapAnywhere
+                    color: "red" // Force red color to ensure visibility
+                    text: {
+                        if (settingsLoader.status === Loader.Error)
+                            return qsTr("设置页面加载失败：请查看控制台日志。");
+                        return "";
+                    }
                 }
             }
 

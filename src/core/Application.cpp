@@ -26,7 +26,6 @@ Application::Application(QGuiApplication* app, QObject* parent)
 
 Application::~Application()
 {
-    delete m_engine;
 }
 
 bool Application::initialize()

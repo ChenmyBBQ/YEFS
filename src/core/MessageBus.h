@@ -68,6 +68,10 @@ namespace Topics {
     // 系统相关
     constexpr const char* APP_READY = "app/ready";
     constexpr const char* CONFIG_CHANGED = "config/changed";
+
+    // 单位设置相关
+    constexpr const char* UNITS_CHANGED = "units/changed";
+    constexpr const char* UNITS_PRESET_APPLIED = "units/preset/applied";
 }
 
 } // namespace YEFS

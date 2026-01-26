@@ -1,6 +1,5 @@
 import QtQuick
 import QtQuick.Layouts
-import QtQuick.Controls
 import HuskarUI.Basic
 
 import YEFSApp
@@ -20,6 +19,7 @@ Rectangle {
     // 分类配置列表
     property var categories: [
         { id: "appearance", name: qsTr("外观"), icon: HusIcon.SkinOutlined },
+        { id: "units", name: qsTr("单位"), icon: HusIcon.DashboardOutlined },
         { id: "map", name: qsTr("地图"), icon: HusIcon.EnvironmentOutlined },
         { id: "data", name: qsTr("数据"), icon: HusIcon.DatabaseOutlined }
     ]
@@ -141,6 +141,12 @@ Rectangle {
                         width: parent.width
                     }
 
+                    // 单位设置
+                    Settings.UnitSettings {
+                        id: unitsSection
+                        width: parent.width
+                    }
+
                     // 地图设置
                     Settings.MapSettings {
                         id: mapSection
@@ -210,7 +216,7 @@ Rectangle {
     // 根据滚动位置更新当前分类
     function updateCurrentCategory() {
         var scrollY = contentFlickable.contentY;
-        var sections = [appearanceSection, mapSection, dataSection];
+        var sections = [appearanceSection, unitsSection, mapSection, dataSection];
         
         for (var i = sections.length - 1; i >= 0; i--) {
             var section = sections[i];
@@ -233,7 +239,7 @@ Rectangle {
 
     // 滚动到指定分类
     function scrollToCategory(categoryIndex) {
-        var sections = [appearanceSection, mapSection, dataSection];
+        var sections = [appearanceSection, unitsSection, mapSection, dataSection];
         
         if (categoryIndex >= 0 && categoryIndex < sections.length) {
             root.isProgrammaticScroll = true;

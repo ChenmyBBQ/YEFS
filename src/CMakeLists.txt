@@ -16,16 +16,6 @@ qt_standard_project_setup(REQUIRES 6.5)
 set(CORE_SOURCES
     core/Application.cpp
     core/Application.h
-    core/MessageBus.cpp
-    core/MessageBus.h
-    core/PluginManager.cpp
-    core/PluginManager.h
-    core/MapLibreEngine.cpp
-    core/MapLibreEngine.h
-    core/MapSettings.cpp
-    core/MapSettings.h
-    core/SettingsManager.cpp
-    core/SettingsManager.h
     core/IMapEngine.h
     core/IPlugin.h
 )
@@ -47,6 +37,21 @@ set(LEGACY_SOURCES
 qt_add_executable(${PROJECT_NAME}
     ${CORE_SOURCES}
     ${LEGACY_SOURCES}
+)
+
+# Ensure plugins are built when main app is built
+add_dependencies(${PROJECT_NAME} huskaruiimplplugin huskaruibasicplugin)
+
+# Fix for HuskarUI plugins not being found by QML engine
+# We copy them from the lib output directory to the QML module directory
+add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:huskaruiimplplugin>
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/HuskarUI/Impl/$<TARGET_FILE_NAME:huskaruiimplplugin>
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:huskaruibasicplugin>
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/HuskarUI/Basic/$<TARGET_FILE_NAME:huskaruibasicplugin>
+    COMMENT "Copying HuskarUI plugins to QML module directories"
 )
 
 # ============================================================================
@@ -73,6 +78,8 @@ qt_add_qml_module(${PROJECT_NAME}
         core/MapSettings.cpp
         core/SettingsManager.h
         core/SettingsManager.cpp
+        core/UnitManager.h
+        core/UnitManager.cpp
 )
 
 # ============================================================================
@@ -164,12 +171,14 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 
 # Copy HuskarUI QML module files to output directory
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E rm -rf ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/HuskarUI
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_BINARY_DIR}/HuskarUI/qml/HuskarUI
         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/HuskarUI
     COMMENT "Copying HuskarUI QML modules to output directory"
 )
+
+
+
 
 # Ensure MapLibre plugin is built and copied
 if(TARGET qtgeoservices_maplibre)

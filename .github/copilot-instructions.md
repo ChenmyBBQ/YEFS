@@ -98,3 +98,19 @@ Implement `IPlugin` interface in [IPlugin.h](src/core/IPlugin.h):
 | Core C++ services | `src/core/` |
 | Images/icons | `src/resources/images/` |
 | Shaders | `src/resources/shaders/` |
+
+## User-Defined Skills / Conversation Rules
+
+This section is intentionally reserved for rules provided by the project owner.
+Copilot should treat the following items as **hard requirements** for all future conversations in this repository.
+
+### Rules (fill in)
+
+1. **所有会话输出必须使用中文**（包括解释、计划、报错分析、提交说明等）。
+2. 编写 QML 页面时，**优先使用 HuskarUI 组件库**（`import HuskarUI.Basic`，优先选择 `Hus*` 组件）。
+3. 编写/重构 QML 页面时，**参考 HuskarUI 的 gallery 示例**作为交互、布局、组件用法与风格的优先范式。
+
+### Examples / Definitions (optional)
+
+- (Example of how to respond)
+- (Definition of key terms)
