@@ -3,4 +3,4 @@
 	url = https://github.com/mengps/HuskarUI.git
 [submodule "3rdparty/maplibre-native-qt"]
 	path = 3rdparty/maplibre-native-qt
-	url = https://github.com/maplibre/maplibre-native-qt.git
+	url = https://github.com/ChenmyBBQ/maplibre-native-qt.git
