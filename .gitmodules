@@ -1,6 +1,6 @@
 [submodule "3rdparty/HuskarUI"]
 	path = 3rdparty/HuskarUI
-	url = https://github.com/ChenmyBBQ/HuskarUI.git
+	url = https://github.com/ChenmyBBQ/YEFS-HuskarUI.git
 [submodule "3rdparty/maplibre-native-qt"]
 	path = 3rdparty/maplibre-native-qt
-	url = https://github.com/ChenmyBBQ/maplibre-native-qt.git
+	url = https://github.com/ChenmyBBQ/YEFS-Maplibre-native-qt.git
