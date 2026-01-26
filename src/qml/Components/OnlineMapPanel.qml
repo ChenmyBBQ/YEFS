@@ -33,7 +33,7 @@ Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
             }
 
-            Item { Layout.fillWidth: true; width: parent.width - 100 }
+            Item { width: parent.width - 100; height: 1 }
         }
 
         HusDivider {
@@ -288,7 +288,11 @@ Rectangle {
             MapSourceManager.addSource(provider)
             HusApp.showSuccess(qsTr('已添加在线地图: ') + provider.name)
         } else {
-            HusApp.showError(qsTr('添加失败'))
+            let errorMsg = qsTr('添加失败')
+            if (providerType === 2 && !apiKey) {
+                errorMsg = qsTr('MapTiler 需要 API Key')
+            }
+            HusApp.showError(errorMsg)
         }
     }
 }

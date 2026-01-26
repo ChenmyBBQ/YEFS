@@ -5,6 +5,7 @@
 #include <QJsonValue>
 #include <QDebug>
 #include <QUuid>
+#include <functional>
 
 namespace YEFS {
 
@@ -25,9 +26,66 @@ GeoJSONSource::GeoJSONSource(const QString& id, const QString& name,
 
 void GeoJSONSource::calculateBounds()
 {
-    // 简单实现：遍历所有坐标计算边界
-    // TODO: 实现完整的边界计算
-    m_bounds = QGeoRectangle(QGeoCoordinate(90, -180), QGeoCoordinate(-90, 180));
+    // 遍历 GeoJSON 计算实际边界
+    if (m_geoJson.isEmpty()) {
+        m_bounds = QGeoRectangle();
+        return;
+    }
+
+    double minLat = 90.0, maxLat = -90.0;
+    double minLon = 180.0, maxLon = -180.0;
+    bool hasCoords = false;
+
+    // 递归函数处理坐标
+    std::function<void(const QJsonValue&)> processCoordinates;
+    processCoordinates = [&](const QJsonValue& coords) {
+        if (coords.isArray()) {
+            QJsonArray arr = coords.toArray();
+            if (arr.isEmpty()) return;
+
+            // 检查是否是坐标点 [lon, lat] 或 [lon, lat, alt]
+            if (arr[0].isDouble()) {
+                if (arr.size() >= 2) {
+                    double lon = arr[0].toDouble();
+                    double lat = arr[1].toDouble();
+                    minLat = qMin(minLat, lat);
+                    maxLat = qMax(maxLat, lat);
+                    minLon = qMin(minLon, lon);
+                    maxLon = qMax(maxLon, lon);
+                    hasCoords = true;
+                }
+            } else {
+                // 递归处理嵌套数组
+                for (const auto& item : arr) {
+                    processCoordinates(item);
+                }
+            }
+        }
+    };
+
+    // 处理 Feature 或 FeatureCollection
+    QString type = m_geoJson["type"].toString();
+    if (type == "FeatureCollection") {
+        QJsonArray features = m_geoJson["features"].toArray();
+        for (const auto& feature : features) {
+            QJsonObject featureObj = feature.toObject();
+            QJsonObject geometry = featureObj["geometry"].toObject();
+            processCoordinates(geometry["coordinates"]);
+        }
+    } else if (type == "Feature") {
+        QJsonObject geometry = m_geoJson["geometry"].toObject();
+        processCoordinates(geometry["coordinates"]);
+    } else {
+        // 直接是 Geometry
+        processCoordinates(m_geoJson["coordinates"]);
+    }
+
+    if (hasCoords) {
+        m_bounds = QGeoRectangle(QGeoCoordinate(maxLat, minLon), 
+                                QGeoCoordinate(minLat, maxLon));
+    } else {
+        m_bounds = QGeoRectangle();
+    }
 }
 
 QVariantMap GeoJSONSource::toMapLibreLayer() const

@@ -34,7 +34,7 @@ Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
             }
 
-            Item { Layout.fillWidth: true; width: parent.width - 150 }
+            Item { width: parent.width - 150; height: 1 }
 
             HusIconButton {
                 width: 32

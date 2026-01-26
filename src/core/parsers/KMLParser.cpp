@@ -272,28 +272,38 @@ KMLSource* KMLParser::parseKML(QXmlStreamReader& xml, const QString& sourceName)
 KMLPlacemark KMLParser::parsePlacemark(QXmlStreamReader& xml)
 {
     KMLPlacemark placemark;
+    QString name, description, styleUrl;
 
     while (!(xml.isEndElement() && xml.name() == QStringLiteral("Placemark"))) {
         xml.readNext();
 
         if (xml.isStartElement()) {
             if (xml.name() == QStringLiteral("name")) {
-                placemark.name = xml.readElementText();
+                name = xml.readElementText();
             }
             else if (xml.name() == QStringLiteral("description")) {
-                placemark.description = xml.readElementText();
+                description = xml.readElementText();
             }
             else if (xml.name() == QStringLiteral("styleUrl")) {
-                placemark.styleUrl = xml.readElementText();
+                styleUrl = xml.readElementText();
             }
             else if (xml.name() == QStringLiteral("Point")) {
                 placemark = parsePoint(xml);
+                placemark.name = name;
+                placemark.description = description;
+                placemark.styleUrl = styleUrl;
             }
             else if (xml.name() == QStringLiteral("LineString")) {
                 placemark = parseLineString(xml);
+                placemark.name = name;
+                placemark.description = description;
+                placemark.styleUrl = styleUrl;
             }
             else if (xml.name() == QStringLiteral("Polygon")) {
                 placemark = parsePolygon(xml);
+                placemark.name = name;
+                placemark.description = description;
+                placemark.styleUrl = styleUrl;
             }
         }
     }
