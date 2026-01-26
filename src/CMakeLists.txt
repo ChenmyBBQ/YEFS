@@ -89,6 +89,10 @@ qt_add_qml_module(${PROJECT_NAME}
         # 地图格式解析器
         core/parsers/GeoJSONParser.h
         core/parsers/GeoJSONParser.cpp
+        core/parsers/GPXParser.h
+        core/parsers/GPXParser.cpp
+        core/parsers/KMLParser.h
+        core/parsers/KMLParser.cpp
 )
 
 # ============================================================================

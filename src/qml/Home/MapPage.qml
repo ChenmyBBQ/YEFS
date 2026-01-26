@@ -203,14 +203,16 @@ Rectangle {
             }
 
             HusIconButton {
+                id: layerPanelButton
                 width: 32
                 height: 32
                 iconSource: HusIcon.AppstoreOutlined
                 iconSize: 16
                 type: HusButton.Type_Text
                 checkable: true
+                checked: layerPanel.visible
                 onClicked: {
-                    MessageBus.send("panel/layers", { visible: checked })
+                    layerPanel.visible = checked
                 }
 
                 HusToolTip {
@@ -261,6 +263,31 @@ Rectangle {
                 text: mapView.coordinate[0].toFixed(4) + '°, ' + mapView.coordinate[1].toFixed(4) + '°'
                 font.pixelSize: 12
                 color: HusTheme.Primary.colorTextSecondary
+            }
+        }
+    }
+
+    // 图层管理面板
+    Loader {
+        id: layerPanel
+        anchors.top: parent.top
+        anchors.bottom: statusBar.top
+        anchors.left: parent.left
+        anchors.margins: 15
+        visible: false
+        active: visible
+        sourceComponent: Component {
+            Rectangle {
+                width: 300
+                height: parent.height
+                radius: HusTheme.Primary.radiusPrimary
+                color: HusThemeFunctions.alpha(HusTheme.Primary.colorBgContainer, 0.95)
+                border.color: HusTheme.Primary.colorBorder
+                
+                Loader {
+                    anchors.fill: parent
+                    source: "../Components/LayerPanel.qml"
+                }
             }
         }
     }

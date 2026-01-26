@@ -5,6 +5,8 @@
 #include "MapParserFactory.h"
 #include "MapSourceManager.h"
 #include "parsers/GeoJSONParser.h"
+#include "parsers/GPXParser.h"
+#include "parsers/KMLParser.h"
 
 #include <QQuickWindow>
 #include <QMapLibre/Utils>
@@ -120,8 +122,10 @@ void Application::initializeMapParsers()
     
     MapParserFactory* factory = MapParserFactory::instance();
     
-    // 注册 GeoJSON 解析器
+    // 注册地图格式解析器
     factory->registerParser(new GeoJSONParser());
+    factory->registerParser(new GPXParser());
+    factory->registerParser(new KMLParser());
     
     qDebug() << "[Application] Registered parsers:" << factory->supportedExtensions();
     
