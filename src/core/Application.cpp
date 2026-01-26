@@ -2,6 +2,9 @@
 #include "MessageBus.h"
 #include "PluginManager.h"
 #include "MapLibreEngine.h"
+#include "MapParserFactory.h"
+#include "MapSourceManager.h"
+#include "parsers/GeoJSONParser.h"
 
 #include <QQuickWindow>
 #include <QMapLibre/Utils>
@@ -70,6 +73,9 @@ bool Application::initialize()
     // 初始化插件管理器
     PluginManager::instance()->scanPlugins();
 
+    // 初始化地图解析系统
+    initializeMapParsers();
+
     // 设置连接
     setupConnections();
 
@@ -106,6 +112,21 @@ void Application::registerQmlSingletons()
 {
     // 单例通过 QML_SINGLETON 自动注册
     qDebug() << "[Application] QML singletons registered";
+}
+
+void Application::initializeMapParsers()
+{
+    qDebug() << "[Application] Initializing map parsers...";
+    
+    MapParserFactory* factory = MapParserFactory::instance();
+    
+    // 注册 GeoJSON 解析器
+    factory->registerParser(new GeoJSONParser());
+    
+    qDebug() << "[Application] Registered parsers:" << factory->supportedExtensions();
+    
+    // 初始化地图源管理器
+    MapSourceManager::instance();
 }
 
 void Application::setupConnections()

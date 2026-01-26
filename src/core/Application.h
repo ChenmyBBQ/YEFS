@@ -41,6 +41,7 @@ public:
 private:
     void registerQmlTypes();
     void registerQmlSingletons();
+    void initializeMapParsers();
     void setupConnections();
 
     QGuiApplication* m_app = nullptr;
