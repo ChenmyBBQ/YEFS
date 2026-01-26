@@ -4,6 +4,7 @@
 #include "MapLibreEngine.h"
 #include "MapParserFactory.h"
 #include "MapSourceManager.h"
+#include "OnlineMapProvider.h"
 #include "parsers/GeoJSONParser.h"
 #include "parsers/GPXParser.h"
 #include "parsers/KMLParser.h"
@@ -131,6 +132,9 @@ void Application::initializeMapParsers()
     
     // 初始化地图源管理器
     MapSourceManager::instance();
+    
+    // 初始化在线地图提供商管理器
+    OnlineMapProviderManager::instance();
 }
 
 void Application::setupConnections()

@@ -213,6 +213,9 @@ Rectangle {
                 checked: layerPanel.visible
                 onClicked: {
                     layerPanel.visible = checked
+                    if (checked) {
+                        onlineMapPanel.visible = false
+                    }
                 }
 
                 HusToolTip {
@@ -220,6 +223,35 @@ Rectangle {
                     showArrow: true
                     position: HusToolTip.Position_Left
                     text: qsTr('图层面板')
+                }
+            }
+
+            HusDivider {
+                width: 24
+                anchors.horizontalCenter: parent.horizontalCenter
+            }
+
+            HusIconButton {
+                id: onlineMapPanelButton
+                width: 32
+                height: 32
+                iconSource: HusIcon.CloudOutlined
+                iconSize: 16
+                type: HusButton.Type_Text
+                checkable: true
+                checked: onlineMapPanel.visible
+                onClicked: {
+                    onlineMapPanel.visible = checked
+                    if (checked) {
+                        layerPanel.visible = false
+                    }
+                }
+
+                HusToolTip {
+                    visible: parent.hovered
+                    showArrow: true
+                    position: HusToolTip.Position_Left
+                    text: qsTr('在线地图')
                 }
             }
         }
@@ -287,6 +319,31 @@ Rectangle {
                 Loader {
                     anchors.fill: parent
                     source: "../Components/LayerPanel.qml"
+                }
+            }
+        }
+    }
+
+    // 在线地图面板
+    Loader {
+        id: onlineMapPanel
+        anchors.top: parent.top
+        anchors.bottom: statusBar.top
+        anchors.left: parent.left
+        anchors.margins: 15
+        visible: false
+        active: visible
+        sourceComponent: Component {
+            Rectangle {
+                width: 300
+                height: parent.height
+                radius: HusTheme.Primary.radiusPrimary
+                color: HusThemeFunctions.alpha(HusTheme.Primary.colorBgContainer, 0.95)
+                border.color: HusTheme.Primary.colorBorder
+                
+                Loader {
+                    anchors.fill: parent
+                    source: "../Components/OnlineMapPanel.qml"
                 }
             }
         }
