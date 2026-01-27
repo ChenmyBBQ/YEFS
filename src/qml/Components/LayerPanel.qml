@@ -55,7 +55,7 @@ Rectangle {
                 height: 32
                 iconSource: HusIcon.DeleteOutlined
                 type: HusButton.Type_Text
-                danger: true
+                colorText: HusTheme.Primary.colorError
                 anchors.verticalCenter: parent.verticalCenter
                 onClicked: {
                     MapSourceManager.removeAllSources()
@@ -153,7 +153,7 @@ Rectangle {
                                 iconSource: HusIcon.DeleteOutlined
                                 iconSize: 14
                                 type: HusButton.Type_Text
-                                danger: true
+                                colorText: HusTheme.Primary.colorError
                                 onClicked: {
                                     MapSourceManager.removeSource(modelData.id)
                                 }
@@ -172,10 +172,11 @@ Rectangle {
                         anchors.centerIn: parent
                         spacing: 12
 
-                        HusIcon {
+                        HusText {
                             id: emptyIcon
-                            type: HusIcon.InboxOutlined
-                            size: 48
+                            text: String.fromCharCode(HusIcon.InboxOutlined)
+                            font.family: "HuskarUI-Icons"
+                            font.pixelSize: 48
                             color: HusTheme.Primary.colorTextTertiary
                             anchors.horizontalCenter: parent.horizontalCenter
                         }

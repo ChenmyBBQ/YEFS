@@ -12,6 +12,11 @@ Column {
     width: parent ? parent.width : 400
     spacing: 10
 
+    // 关闭打开的辅助窗口
+    function closeAllPopups() {
+        iconBrowserLoader.active = false
+    }
+
     HusText {
         text: qsTr('数据设置')
         font.weight: Font.DemiBold
@@ -122,6 +127,35 @@ Column {
                     font.pixelSize: 12
                 }
             }
+
+            Row {
+                height: 36
+                spacing: 20
+
+                HusText {
+                    width: 100
+                    height: parent.height
+                    text: qsTr('开发工具')
+                    verticalAlignment: Text.AlignVCenter
+                }
+
+                HusButton {
+                    text: qsTr("图标资源预览")
+                    onClicked: iconBrowserLoader.active = true
+                }
+            }
+        }
+    }
+
+    Loader {
+        id: iconBrowserLoader
+        active: false
+        source: "IconBrowserWindow.qml"
+        onLoaded: {
+            item.show()
+            item.closing.connect(function() {
+                iconBrowserLoader.active = false
+            })
         }
     }
 }

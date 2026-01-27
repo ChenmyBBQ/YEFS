@@ -83,7 +83,7 @@ Rectangle {
                         HusButton {
                             text: qsTr('添加到图层')
                             type: HusButton.Type_Primary
-                            size: HusButton.Size_Small
+                            sizeHint: 'small'
                             onClicked: {
                                 addOnlineMap(0) // OpenStreetMap
                             }
@@ -124,7 +124,7 @@ Rectangle {
                         HusButton {
                             text: qsTr('添加到图层')
                             type: HusButton.Type_Primary
-                            size: HusButton.Size_Small
+                            sizeHint: 'small'
                             onClicked: {
                                 addOnlineMap(1) // OpenFreeMap
                             }
@@ -165,7 +165,7 @@ Rectangle {
                         HusButton {
                             text: qsTr('添加到图层')
                             type: HusButton.Type_Primary
-                            size: HusButton.Size_Small
+                            sizeHint: 'small'
                             onClicked: {
                                 addOnlineMap(4) // EsriWorldImagery
                             }
@@ -206,7 +206,7 @@ Rectangle {
                         HusButton {
                             text: qsTr('添加到图层')
                             type: HusButton.Type_Primary
-                            size: HusButton.Size_Small
+                            sizeHint: 'small'
                             onClicked: {
                                 addOnlineMap(5) // CartoDB
                             }
@@ -257,7 +257,7 @@ Rectangle {
                         HusButton {
                             text: qsTr('添加到图层')
                             type: HusButton.Type_Primary
-                            size: HusButton.Size_Small
+                            sizeHint: 'small'
                             enabled: mapTilerKeyInput.text.length > 0
                             onClicked: {
                                 addOnlineMap(2, mapTilerKeyInput.text) // MapTiler

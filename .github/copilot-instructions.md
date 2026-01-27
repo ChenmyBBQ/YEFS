@@ -4,6 +4,7 @@
 1. 所有会话输出必须使用中文（含解释、计划、报错分析、提交说明等）。
 2. 编写/重构 QML 页面时，优先使用 HuskarUI（`import HuskarUI.Basic`，优先选用 `Hus*` 组件）。
 3. 编写/重构 QML 页面时，交互/布局/组件用法优先参考 HuskarUI 的 gallery 示例。
+4. 提交说明必须是中文，且要简洁明了地描述变更内容和目的。
 
 ## 入口与运行链路（可从源码验证）
 - 启动入口：`src/cpp/main.cpp` → 创建 `YEFS::Application` → `initialize()` → `run()` 加载 `qrc:/YEFSApp/qml/Main.qml`。

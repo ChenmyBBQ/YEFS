@@ -16,6 +16,13 @@ Rectangle {
     signal closeRequested()
     signal applyRequested()
 
+    onVisibleChanged: {
+        if (!visible) {
+            // 页面隐藏时关闭子页面弹窗
+            dataSection.closeAllPopups()
+        }
+    }
+
     // 分类配置列表
     property var categories: [
         { id: "appearance", name: qsTr("外观"), icon: HusIcon.SkinOutlined },
