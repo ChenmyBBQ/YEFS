@@ -1,5 +1,6 @@
 #include "GPXParser.h"
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QDebug>
 #include <QUuid>

@@ -2,7 +2,7 @@
 #include "MessageBus.h"
 #include "PluginManager.h"
 #include "MapLibreEngine.h"
-#include "MapParserFactory.h"
+#include "IMapParser.h"
 #include "MapSourceManager.h"
 #include "OnlineMapProvider.h"
 #include "parsers/GeoJSONParser.h"

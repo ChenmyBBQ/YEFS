@@ -1,5 +1,6 @@
 #include "KMLParser.h"
 #include <QFile>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QDebug>
 #include <QUuid>

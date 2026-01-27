@@ -1,7 +1,7 @@
 #ifndef YEFS_ONLINEMAPPROVIDER_H
 #define YEFS_ONLINEMAPPROVIDER_H
 
-#include "../IMapSource.h"
+#include "IMapSource.h"
 #include <QObject>
 #include <QString>
 #include <QStringList>

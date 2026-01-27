@@ -9,9 +9,9 @@
 #include <QQmlEngine>
 #include <QHash>
 
-namespace YEFS {
+#include "IMapSource.h"
 
-class IMapSource;
+namespace YEFS {
 
 /**
  * @brief 地图格式解析器接口

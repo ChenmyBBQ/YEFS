@@ -44,20 +44,43 @@ Rectangle {
             onScaleChanged: (delta) => {
                 mapView.scale(delta, pinch.centroid.position)
             }
+            onRotationChanged: (delta) => {
+                mapView.bearing -= delta
+            }
             grabPermissions: PointerHandler.TakeOverForbidden
         }
 
         DragHandler {
             id: drag
             target: null
+            acceptedButtons: Qt.LeftButton
             onTranslationChanged: (delta) => mapView.pan(delta)
+        }
+
+        // 右键拖拽控制旋转和倾斜
+        DragHandler {
+            id: rotateTiltHandler
+            target: null
+            acceptedButtons: Qt.RightButton
+            onTranslationChanged: (delta) => {
+                mapView.bearing -= delta.x * 0.2
+                // 限制俯仰角在 0-85 度之间
+                var newPitch = mapView.pitch - delta.y * 0.2
+                mapView.pitch = Math.max(0, Math.min(85, newPitch))
+            }
         }
 
         WheelHandler {
             id: wheel
             acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
             onWheel: (event) => {
-                mapView.scale(Math.pow(2.0, event.angleDelta.y / 120), wheel.point.position)
+                if (event.modifiers & Qt.ControlModifier) {
+                    // Ctrl + 滚轮调整俯仰角
+                    var newPitch = mapView.pitch - (event.angleDelta.y * 0.1)
+                    mapView.pitch = Math.max(0, Math.min(85, newPitch))
+                } else {
+                    mapView.scale(Math.pow(2.0, event.angleDelta.y / 120), wheel.point.position)
+                }
             }
         }
     }
