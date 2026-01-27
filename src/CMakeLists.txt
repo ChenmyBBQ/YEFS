@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Quick Location Positioning)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Quick Location Positioning Network)
 
 qt_standard_project_setup(REQUIRES 6.5)
 
@@ -80,6 +80,21 @@ qt_add_qml_module(${PROJECT_NAME}
         core/SettingsManager.cpp
         core/UnitManager.h
         core/UnitManager.cpp
+        # 地图解析框架
+        core/IMapSource.h
+        core/IMapParser.h
+        core/MapParserFactory.cpp
+        core/MapSourceManager.h
+        core/MapSourceManager.cpp
+        core/OnlineMapProvider.h
+        core/OnlineMapProvider.cpp
+        # 地图格式解析器
+        core/parsers/GeoJSONParser.h
+        core/parsers/GeoJSONParser.cpp
+        core/parsers/GPXParser.h
+        core/parsers/GPXParser.cpp
+        core/parsers/KMLParser.h
+        core/parsers/KMLParser.cpp
 )
 
 # ============================================================================
@@ -138,6 +153,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Quick
     Qt6::Location
     Qt6::Positioning
+    Qt6::Network
     HuskarUIBasic
     QMapLibre::Core
     QMapLibre::Location

@@ -1,116 +1,37 @@
-# YEFS - AI Agent Instructions
+# YEFS（Qt6/QML GIS 地面站）Copilot 指南
 
-## Project Overview
+## 硬性规则（必须遵守）
+1. 所有会话输出必须使用中文（含解释、计划、报错分析、提交说明等）。
+2. 编写/重构 QML 页面时，优先使用 HuskarUI（`import HuskarUI.Basic`，优先选用 `Hus*` 组件）。
+3. 编写/重构 QML 页面时，交互/布局/组件用法优先参考 HuskarUI 的 gallery 示例。
 
-YEFS (无人机地面站系统) is a Qt6/QML-based GIS platform for drone ground station systems. It integrates MapLibre Native Qt for map rendering and HuskarUI for the component library.
+## 入口与运行链路（可从源码验证）
+- 启动入口：`src/cpp/main.cpp` → 创建 `YEFS::Application` → `initialize()` → `run()` 加载 `qrc:/YEFSApp/qml/Main.qml`。
+- 构建输出/运行：可执行文件位于 `out/<BuildType>/bin/YEFS`，直接运行该二进制。
 
-## Architecture
-
-### Core Framework (`src/core/`)
-- **Application** - App lifecycle, initializes services and QML engine
-- **MessageBus** - Pub/sub system for cross-module communication (C++/QML). Use predefined topics in `YEFS::Topics::*`
-- **PluginManager** - Plugin discovery/loading. Implements `IPlugin` interface for extensions
-- **MapLibreEngine** - MapLibre wrapper exposing unified map API to QML
-- **SettingsManager** - JSON-based settings persistence. Access via `SettingsManager.getValue(category, key, default)`
-
-### QML Structure (`src/qml/`)
-```
-qml/
-├── Main.qml          # App entry, HusWindow + HusMenu navigation
-├── YefsGlobal.qml    # Menu structure definition with routes
-├── Home/             # Main pages (MapPage, SettingsPage, etc.)
-└── Settings/         # Settings category components
-```
-
-### Key Dependencies
-- **HuskarUI** (`3rdparty/HuskarUI/`) - Ant Design-style QML components. Import as `HuskarUI.Basic`
-- **MapLibre** (`3rdparty/maplibre-native-qt/`) - Map rendering. Import as `MapLibre 4.0`
-
-## Build System
-
+## 构建与部署（可从 CMake 验证）
 ```bash
-# Configure (from project root)
-cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=Debug
-
-# Build
+cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
 cmake --build build
-
-# Output location: out/<BuildType>/bin/
+./out/RelWithDebInfo/bin/YEFS
 ```
+- 顶层 `CMakeLists.txt` 统一设置输出到 `out/<BuildType>/bin`。
+- `src/CMakeLists.txt` 在 POST_BUILD 阶段复制运行所需的 QML 模块/插件到 `out/<BuildType>/bin`：
+    - HuskarUI QML 模块到 `bin/HuskarUI/*`，并将 Basic/Impl 插件放入对应模块目录。
+    - MapLibre QML 模块到 `bin/MapLibre/*`，GeoServices 插件到 `bin/geoservices/`。
 
-### CMake Options
-| Option | Default | Description |
-|--------|---------|-------------|
-| `BUILD_HUSKARUI_STATIC_LIBRARY` | OFF | Static link HuskarUI |
-| `MLN_QT_WITH_LOCATION` | ON | Enable Qt Location integration |
+## QML 结构与导航（可从 QML 验证）
+- 导航骨架：`src/qml/Main.qml`（HusWindow + HusMenu + Loader）。
+- 菜单/路由：`src/qml/YefsGlobal.qml` 定义 `menus/options`，菜单项 `source` 指向 `src/qml/Home/*.qml`。
+- 页面组织：主页面在 `src/qml/Home/`（如 MapPage/SettingsPage/AboutPage），设置子面板在 `src/qml/Settings/`。
 
-## Code Patterns
+## 核心 QML 单例与用法（可从头文件验证）
+在 QML 中先 `import YEFSApp`，然后直接调用（这些类均为 `QML_SINGLETON`）：
+- `MessageBus.send(topic, data)`；主题常量在 `src/core/MessageBus.h` 的 `YEFS::Topics::*`。
+- `SettingsManager.getValue(category, key, default)` / `setValue(...)`；配置文件位置为 `QStandardPaths::AppDataLocation/settings.json`，可用 `SettingsManager.settingsFilePath()` 获取。
+- `PluginManager.loadAllPlugins()` / `getPluginQmlEntry(id)` / `getPluginSettingsPage(id)`。
+- `UnitManager.*`：单位格式化/换算（如 `formatAltitude`、`convert`）。
 
-### QML Singletons (C++ → QML)
-All core services use `QML_SINGLETON` macro and are auto-registered:
-```qml
-import YEFSApp
-// Access directly: MessageBus.send("topic", data)
-// Access directly: SettingsManager.getValue("map", "styleUrl", "")
-```
-
-### Adding Menu Items
-Edit [YefsGlobal.qml](src/qml/YefsGlobal.qml) `menus` array:
-```qml
-{ key: 'NewPage', label: qsTr('Label'), iconSource: HusIcon.IconName, source: './Home/NewPage.qml' }
-```
-
-### Settings Integration
-```qml
-// Read setting
-let value = SettingsManager.getValue("category", "key", defaultValue);
-
-// Write setting
-SettingsManager.setValue("category", "key", newValue);
-
-// React to changes
-Connections {
-    target: SettingsManager
-    function onSettingsChanged(category, key) { /* handle */ }
-}
-```
-
-### Plugin Development
-Implement `IPlugin` interface in [IPlugin.h](src/core/IPlugin.h):
-- Plugin types: `ToolPlugin`, `DataProvider`, `UIExtension`, `MapOverlay`
-- Required: `id()`, `name()`, `version()`, `pluginType()`, `initialize()`, `shutdown()`
-- Optional: `qmlEntry()`, `settingsPage()` for QML integration
-
-## Conventions
-
-- **Namespace**: All C++ core code in `YEFS::` namespace
-- **Chinese comments**: Source uses Chinese (中文) for documentation
-- **HuskarUI prefix**: UI components use `Hus*` prefix (HusButton, HusText, HusMenu, etc.)
-- **Theme access**: Use `HusTheme.Primary.*` for colors, `HusTheme.isDark` for dark mode
-- **Resource paths**: `qrc:/YEFSApp/resources/...` for images/shaders
-
-## File Locations
-
-| Purpose | Location |
-|---------|----------|
-| New QML pages | `src/qml/Home/` |
-| Settings panels | `src/qml/Settings/` |
-| Core C++ services | `src/core/` |
-| Images/icons | `src/resources/images/` |
-| Shaders | `src/resources/shaders/` |
-
-## User-Defined Skills / Conversation Rules
-
-This section is intentionally reserved for rules provided by the project owner.
-Copilot should treat the following items as **hard requirements** for all future conversations in this repository.
-
-### Rules (fill in)
-
-1. **所有会话输出必须使用中文**（包括解释、计划、报错分析、提交说明等）。
-2. 编写 QML 页面时，**优先使用 HuskarUI 组件库**（`import HuskarUI.Basic`，优先选择 `Hus*` 组件）。
-3. 编写/重构 QML 页面时，**参考 HuskarUI 的 gallery 示例**作为交互、布局、组件用法与风格的优先范式。
-
-### Examples / Definitions (optional)
-
-- (Example of how to respond)
-- (Definition of key terms)
+## 插件机制（可从源码验证）
+- 接口：实现 `src/core/IPlugin.h`（必须实现 `initialize/shutdown/id/name/version/pluginType`）。
+- 扫描目录（Linux）：`<bin>/plugins`、`<bin>/../plugins`、`~/.local/share/YEFS/plugins`（见 `PluginManager` 构造与 `scanPlugins()`）。
