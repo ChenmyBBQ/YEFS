@@ -302,3 +302,41 @@ if(CMAKE_BUILD_TYPE MATCHES "Release")
         add_dependencies(YEFS-DeployRelease ${PROJECT_NAME})
     endif()
 endif()
+
+# ============================================================================
+# 生成 .qmlls.ini (QML Language Server 配置)
+# ============================================================================
+
+# 获取 Qt QML 默认路径 (如果没设置，尝试推断或留空，qmlls 可能会自己找)
+if(NOT DEFINED QT_QML_IMPORT_PATH)
+    # 尝试从 Qt6::Core 属性中获取
+    get_target_property(QT_CORE_IMPORTED_LOCATION Qt6::Core IMPORTED_LOCATION)
+    get_filename_component(QT_BIN_DIR ${QT_CORE_IMPORTED_LOCATION} DIRECTORY)
+    set(QT_QML_IMPORT_PATH "${QT_BIN_DIR}/../qml")
+endif()
+
+configure_file(
+    ${CMAKE_SOURCE_DIR}/.qmlls.ini.in
+    ${CMAKE_SOURCE_DIR}/.qmlls.ini
+    @ONLY
+)
+
+
+# ============================================================================
+# 更新 .vscode/settings.json (VS Code 智能感知配置)
+# ============================================================================
+find_package(Python3 COMPONENTS Interpreter)
+if(Python3_Interpreter_FOUND)
+    # 构造导入路径列表 (与 .qmlls.ini 保持一致)
+    set(VSCODE_QML_PATHS "${QT_QML_IMPORT_PATH},${CMAKE_RUNTIME_OUTPUT_DIRECTORY},${CMAKE_SOURCE_DIR}/3rdparty/HuskarUI/src/imports,${CMAKE_SOURCE_DIR}/3rdparty/HuskarUI/build/HuskarUI/qml")
+    
+    # 在配置阶段执行脚本
+    execute_process(
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/scripts/update_vscode_settings.py
+                --root ${CMAKE_SOURCE_DIR}
+                --paths "${VSCODE_QML_PATHS}"
+        OUTPUT_VARIABLE UPDATE_LOG
+    )
+    message(STATUS "VS Code Settings Update: ${UPDATE_LOG}")
+endif()
+

@@ -28,9 +28,10 @@ public:
     static MapSourceManager* create(QQmlEngine* qmlEngine, QJSEngine* jsEngine);
 
     // 数据源管理
+    Q_INVOKABLE void addSource(QObject* source);
     void addSource(IMapSource* source);
-    void removeSource(const QString& sourceId);
-    void removeAllSources();
+    Q_INVOKABLE void removeSource(const QString& sourceId);
+    Q_INVOKABLE void removeAllSources();
 
     // 查询
     IMapSource* source(const QString& sourceId) const;

@@ -15,6 +15,12 @@ Rectangle {
     color: HusThemeFunctions.alpha(HusTheme.Primary.colorBgContainer, 0.95)
     border.color: HusTheme.Primary.colorBorder
 
+    HusMessage {
+        id: toast
+        anchors.fill: parent
+        z: 999
+    }
+
     Column {
         anchors.fill: parent
         anchors.margins: 15
@@ -286,13 +292,13 @@ Rectangle {
         let provider = OnlineMapProviderManager.createProvider(providerType, apiKey)
         if (provider) {
             MapSourceManager.addSource(provider)
-            HusApp.showSuccess(qsTr('已添加在线地图: ') + provider.name)
+            toast.success(qsTr('已添加在线地图: ') + provider.name)
         } else {
             let errorMsg = qsTr('添加失败')
             if (providerType === 2 && !apiKey) {
                 errorMsg = qsTr('MapTiler 需要 API Key')
             }
-            HusApp.showError(errorMsg)
+            toast.error(errorMsg)
         }
     }
 }

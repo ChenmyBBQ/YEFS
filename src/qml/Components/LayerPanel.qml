@@ -1,7 +1,6 @@
 import QtQuick
-import QtQuick.Layouts
 import QtQuick.Controls
-import HuskarUI.Basic
+import HuskarUI.Basic 1.0
 import QtQuick.Dialogs
 
 import YEFSApp
@@ -15,6 +14,12 @@ Rectangle {
     height: parent ? parent.height : 600
     color: HusThemeFunctions.alpha(HusTheme.Primary.colorBgContainer, 0.95)
     border.color: HusTheme.Primary.colorBorder
+
+    HusMessage {
+        id: toast
+        anchors.fill: parent
+        z: 999
+    }
 
     Column {
         anchors.fill: parent
@@ -86,6 +91,7 @@ Rectangle {
                     model: MapSourceManager.sources
 
                     delegate: Rectangle {
+                        required property var modelData
                         width: parent.width
                         height: 60
                         radius: HusTheme.Primary.radiusPrimary
@@ -235,9 +241,9 @@ Rectangle {
             if (files.length > 0) {
                 let success = MapSourceManager.loadFiles(files)
                 if (success) {
-                    HusApp.showSuccess(qsTr('导入成功'))
+                    toast.success(qsTr('导入成功'))
                 } else {
-                    HusApp.showError(qsTr('部分文件导入失败'))
+                    toast.error(qsTr('部分文件导入失败'))
                 }
             }
         }

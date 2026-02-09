@@ -59,6 +59,22 @@ void MapSourceManager::addSource(IMapSource* source)
     emit sourcesChanged();
 }
 
+void MapSourceManager::addSource(QObject* source)
+{
+    if (!source) {
+        qWarning() << "[MapSourceManager] Attempting to add null source object";
+        return;
+    }
+
+    auto mapSource = qobject_cast<IMapSource*>(source);
+    if (!mapSource) {
+        qWarning() << "[MapSourceManager] Object is not an IMapSource:" << source;
+        return;
+    }
+
+    addSource(mapSource);
+}
+
 void MapSourceManager::removeSource(const QString& sourceId)
 {
     if (!m_sources.contains(sourceId)) {

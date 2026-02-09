@@ -103,9 +103,11 @@ void PluginManager::scanPlugins()
 {
     qDebug() << "[PluginManager] Scanning plugins in paths:" << m_pluginPaths;
 
-    for (const QString& path : m_pluginPaths) {
+    for (const QString& path : m_pluginPaths)
+     {
         QDir dir(path);
-        if (!dir.exists()) continue;
+        if (!dir.exists()) 
+            continue;
 
         // 扫描插件文件
 #ifdef Q_OS_WIN
@@ -116,15 +118,18 @@ void PluginManager::scanPlugins()
         QStringList filters = {"*.so"};
 #endif
 
-        for (const QString& fileName : dir.entryList(filters, QDir::Files)) {
+        for (const QString& fileName : dir.entryList(filters, QDir::Files)) 
+        {
             QString filePath = dir.absoluteFilePath(fileName);
             
             QPluginLoader loader(filePath);
             QJsonObject metaData = loader.metaData().value("MetaData").toObject();
             
-            if (!metaData.isEmpty()) {
+            if (!metaData.isEmpty()) 
+            {
                 QString pluginId = metaData.value("id").toString();
-                if (!pluginId.isEmpty()) {
+                if (!pluginId.isEmpty())
+                 {
                     m_pluginFiles[pluginId] = filePath;
                     qDebug() << "[PluginManager] Found plugin:" << pluginId << "at" << filePath;
                 }
