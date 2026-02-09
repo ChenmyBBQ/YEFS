@@ -40,6 +40,9 @@ bool Application::initialize()
 
     // 配置渲染
     qputenv("QSG_RENDER_LOOP", "basic");
+    
+    // 确保最后一个窗口关闭时退出应用
+    m_app->setQuitOnLastWindowClosed(true);
 
     QLoggingCategory::setFilterRules(
         "qt.location.*.debug=false\n"

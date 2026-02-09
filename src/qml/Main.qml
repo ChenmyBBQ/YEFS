@@ -41,6 +41,11 @@ HusWindow {
         HusApi.setWindowStaysOnTopHint(mainWindow, checked);
     }
 
+    // 确保窗口关闭时完全退出应用程序
+    onClosing: (close) => {
+        Qt.quit()
+    }
+
     Component.onCompleted: {
         if (Qt.platform.os === 'windows') {
             if (setSpecialEffect(HusWindow.Win_MicaAlt)) return;
