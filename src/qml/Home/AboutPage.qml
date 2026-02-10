@@ -43,8 +43,7 @@ HusWindow {
             id: backRect
             anchors.fill: parent
             radius: 6
-            color: HusTheme.Primary.colorBgBase
-            border.color: HusThemeFunctions.alpha(HusTheme.Primary.colorTextBase, 0.2)
+            color: HusTheme.Primary.colorBgContainer
         }
 
         Column {

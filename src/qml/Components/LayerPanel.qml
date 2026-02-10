@@ -13,7 +13,7 @@ Rectangle {
     width: 300
     height: parent ? parent.height : 600
     color: HusThemeFunctions.alpha(HusTheme.Primary.colorBgContainer, 0.95)
-    border.color: HusTheme.Primary.colorBorder
+
 
     HusMessage {
         id: toast

@@ -46,3 +46,4 @@ out/
 cmake-build*/
 .idea/
 src/.qmlls.ini
+.vscode/settings.json

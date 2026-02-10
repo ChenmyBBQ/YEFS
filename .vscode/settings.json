@@ -1,15 +1,15 @@
 {
     "qt.qml.importPaths": [
-        "/opt/Qt/6.10.1/gcc_64/lib/../qml",
-        "/home/bbq/YEFS/out/RelWithDebInfo/bin",
-        "/home/bbq/YEFS/3rdparty/HuskarUI/src/imports",
-        "/home/bbq/YEFS/3rdparty/HuskarUI/build/HuskarUI/qml"
+        "F:/Qt/6.10.1/mingw_64/bin/../qml",
+        "G:/YEFS/out/RelWithDebInfo/bin",
+        "G:/YEFS/3rdparty/HuskarUI/src/imports",
+        "G:/YEFS/3rdparty/HuskarUI/build/HuskarUI/qml"
     ],
     "qml.importPaths": [
-        "/opt/Qt/6.10.1/gcc_64/lib/../qml",
-        "/home/bbq/YEFS/out/RelWithDebInfo/bin",
-        "/home/bbq/YEFS/3rdparty/HuskarUI/src/imports",
-        "/home/bbq/YEFS/3rdparty/HuskarUI/build/HuskarUI/qml"
+        "F:/Qt/6.10.1/mingw_64/bin/../qml",
+        "G:/YEFS/out/RelWithDebInfo/bin",
+        "G:/YEFS/3rdparty/HuskarUI/src/imports",
+        "G:/YEFS/3rdparty/HuskarUI/build/HuskarUI/qml"
     ],
     "qt-qml.qmlls.additionalImportPaths": [
         "/home/bbq/YEFS/build/src",

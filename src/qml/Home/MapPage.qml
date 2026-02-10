@@ -7,7 +7,7 @@ import YEFSApp
 
 Rectangle {
     id: root
-    color: HusTheme.isDark ? '#1a1a1a' : '#f0f0f0'
+    color: HusTheme.Primary.colorBgContainer
 
     // 获取配置的样式URL
     function getMapStyleUrl() {
@@ -287,7 +287,7 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         height: 28
-        color: HusThemeFunctions.alpha(HusTheme.Primary.colorBgContainer, 0.9)
+        color: HusTheme.Primary.colorBgContainer
 
         RowLayout {
             anchors.fill: parent
