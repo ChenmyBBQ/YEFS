@@ -12,13 +12,13 @@
         "G:/YEFS/3rdparty/HuskarUI/build/HuskarUI/qml"
     ],
     "qt-qml.qmlls.additionalImportPaths": [
-        "/home/bbq/YEFS/build/src",
-        "/home/bbq/YEFS/build/HuskarUI/qml",
-        "/home/bbq/YEFS/3rdparty/HuskarUI/build/HuskarUI/qml",
-        "/home/bbq/YEFS/3rdparty/HuskarUI/src/imports",
-        "/home/bbq/YEFS/build/3rdparty/maplibre-native-qt/src/quick/plugins",
-        "/home/bbq/YEFS/build/3rdparty/maplibre-native-qt/src/location/plugins"
+        "F:/Qt/6.10.1/mingw_64/qml",
+        "G:/YEFS/build/HuskarUI/qml",
+        "G:/YEFS/3rdparty/HuskarUI/build/HuskarUI/qml",
+        "G:/YEFS/3rdparty/HuskarUI/src/imports",
+        "G:/YEFS/build/3rdparty/maplibre-native-qt/src/quick/plugins",
+        "G:/YEFS/build/3rdparty/maplibre-native-qt/src/location/plugins"
     ],
-    "qt-qml.qmlls.customDocsPath": "/opt/Qt/Docs/Qt-6.10.1",
+    "qt-qml.qmlls.customDocsPath": "F:/Qt/6.10.1/Docs",
     "qt-qml.qmlls.useNoCMakeCalls": false
 }
