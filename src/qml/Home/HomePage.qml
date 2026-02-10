@@ -1,8 +1,5 @@
 import QtQuick
-import QtQuick.Layouts
-import QtQuick.Controls.Basic
-import QtQuick.Effects
-import HuskarUI.Basic
+// removed unused imports: QtQuick.Layouts, QtQuick.Controls.Basic, QtQuick.Effects, HuskarUI.Basic
 
 Loader {
     anchors.fill: parent

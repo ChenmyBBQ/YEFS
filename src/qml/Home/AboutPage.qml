@@ -1,6 +1,5 @@
 import QtQuick
-import QtQuick.Layouts
-import QtQuick.Controls.Basic
+// removed unused imports: QtQuick.Layouts, QtQuick.Controls.Basic
 import HuskarUI.Basic
 
 import YEFSApp
