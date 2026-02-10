@@ -39,11 +39,11 @@ HusWindow {
     }
     captionBar.winPresetButtonsDelegate: Row {
         Connections {
-            target: captionBar
+            target: mainWindow.captionBar
             function onWindowAgentChanged() {
-                captionBar.addInteractionItem(themeButton);
-                captionBar.addInteractionItem(topButton);
-                captionBar.addInteractionItem(themeColorCaptionButton);
+                mainWindow.captionBar.addInteractionItem(themeButton);
+                mainWindow.captionBar.addInteractionItem(topButton);
+                mainWindow.captionBar.addInteractionItem(themeColorCaptionButton);
             }
         }
 
@@ -222,7 +222,7 @@ HusWindow {
             iconSource: HusTheme.isDark ? HusIcon.MoonOutlined : HusIcon.SunOutlined
             iconSize: 14
             contentDescription: qsTr('明暗主题切换')
-            onClicked: captionBar.themeCallback();
+            onClicked: mainWindow.captionBar.themeCallback(); // qmllint disable missing-property
         }
 
         HusCaptionButton {
@@ -232,9 +232,9 @@ HusWindow {
             iconSource: HusIcon.PushpinOutlined
             iconSize: 14
             checkable: true
-            checked: captionBar.topButtonChecked
+            checked: mainWindow.captionBar.topButtonChecked // qmllint disable missing-property
             contentDescription: qsTr('置顶')
-            onClicked: captionBar.topCallback(checked);
+            onClicked: mainWindow.captionBar.topCallback(checked); // qmllint disable missing-property
         }
     }
 
@@ -488,7 +488,7 @@ HusWindow {
                 }
 
                 HusToolTip {
-                    visible: parent.hovered
+                    visible: navModeButton.hovered
                     showArrow: true
                     text: {
                         switch (yefsMenu.compactMode) {
@@ -512,18 +512,18 @@ HusWindow {
                 iconSize: yefsMenu.defaultMenuIconSize
                 iconSource: HusIcon.InfoCircleOutlined
                 onClicked: {
-                    if (!aboutWindow) {
-                        aboutWindow = aboutWindowComponent.createObject(null);
+                    if (!mainWindow.aboutWindow) {
+                        mainWindow.aboutWindow = aboutWindowComponent.createObject(null);
                     }
-                    aboutWindow.visible = !aboutWindow.visible;
-                    if (aboutWindow.visible) {
-                        aboutWindow.raise();
-                        aboutWindow.requestActivate();
+                    mainWindow.aboutWindow.visible = !mainWindow.aboutWindow.visible;
+                    if (mainWindow.aboutWindow.visible) {
+                        mainWindow.aboutWindow.raise();
+                        mainWindow.aboutWindow.requestActivate();
                     }
                 }
 
                 HusToolTip {
-                    visible: parent.hovered
+                    visible: aboutButton.hovered
                     showArrow: true
                     text: qsTr('关于 YEFS')
                 }
@@ -548,7 +548,7 @@ HusWindow {
                 }
 
                 HusToolTip {
-                    visible: parent.hovered
+                    visible: settingsButton.hovered
                     showArrow: true
                     text: qsTr('设置')
                 }

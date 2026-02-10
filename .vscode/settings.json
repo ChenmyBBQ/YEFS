@@ -14,11 +14,7 @@
     "qt-qml.qmlls.additionalImportPaths": [
         "F:/Qt/6.10.1/mingw_64/qml",
         "G:/YEFS/out/RelWithDebInfo/bin",
-        "G:/YEFS/build/HuskarUI/qml",
-        "G:/YEFS/3rdparty/HuskarUI/build/HuskarUI/qml",
-        "G:/YEFS/3rdparty/HuskarUI/src/imports",
-        "G:/YEFS/build/3rdparty/maplibre-native-qt/src/quick/plugins",
-        "G:/YEFS/build/3rdparty/maplibre-native-qt/src/location/plugins"
+        "G:/YEFS/build/src"
     ],
     "qt-qml.qmlls.customDocsPath": "F:/Qt/6.10.1/Docs",
     "qt-qml.qmlls.useNoCMakeCalls": false
