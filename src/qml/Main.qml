@@ -12,7 +12,6 @@ HusWindow {
     id: mainWindow
     width: 1400
     height: 900
-    opacity: 0
     minimumWidth: 800
     minimumHeight: 600
     title: qsTr('YEFS - GIS Platform')
@@ -267,22 +266,21 @@ HusWindow {
         }
     }
 
-    Behavior on opacity { NumberAnimation { } }
-
-    Timer {
-        running: true
-        interval: 200
-        onTriggered: {
-            mainWindow.opacity = 1;
-        }
-    }
-
     Item {
         id: content
         anchors.top: mainWindow.captionBar.bottom
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.right: parent.right
+        opacity: 0
+
+        Behavior on opacity { NumberAnimation { duration: 300 } }
+
+        Timer {
+            running: true
+            interval: 200
+            onTriggered: content.opacity = 1
+        }
 
         // 内容区背景（参考设置页：左侧导航/右侧内容）
         Rectangle {
