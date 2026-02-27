@@ -4,6 +4,8 @@
 #include <QQuickWindow>
 #include <QMapLibre/Utils>
 #include <QLoggingCategory>
+#include <QFile>
+#include <QDateTime>
 
 #ifdef BUILD_HUSKARUI_STATIC_LIBRARY
 #include <QtQml/qqmlextensionplugin.h>
@@ -14,20 +16,34 @@ Q_IMPORT_QML_PLUGIN(HuskarUI_BasicPlugin)
 #include "husapp.h"
 #include "Application.h"
 
-// 过滤平台插件产生的无害警告，减少日志噪音
+// 日志输出到文件，用于调试关闭流程
+static QFile *s_logFile = nullptr;
 static QtMessageHandler s_defaultHandler = nullptr;
-static void messageFilter(QtMsgType type, const QMessageLogContext &ctx, const QString &msg)
+static void fileMessageHandler(QtMsgType type, const QMessageLogContext &ctx, const QString &msg)
 {
     // 过滤 Linux 平台不支持窗口透明度的警告
     if (type == QtWarningMsg && msg.contains(QStringLiteral("does not support setting window opacity")))
         return;
+
+    if (s_logFile && s_logFile->isOpen()) {
+        QTextStream out(s_logFile);
+        QString timestamp = QDateTime::currentDateTime().toString("hh:mm:ss.zzz");
+        out << timestamp << " " << msg << "\n";
+        out.flush();
+    }
+
+    // 同时输出到原始处理器（stderr）
     if (s_defaultHandler)
         s_defaultHandler(type, ctx, msg);
 }
 
 int main(int argc, char *argv[])
 {
-    s_defaultHandler = qInstallMessageHandler(messageFilter);
+    // 设置日志文件
+    s_logFile = new QFile("yefs_debug.log");
+    s_logFile->open(QIODevice::WriteOnly | QIODevice::Truncate | QIODevice::Text);
+
+    s_defaultHandler = qInstallMessageHandler(fileMessageHandler);
 
     QGuiApplication app(argc, argv);
     app.addLibraryPath(app.applicationDirPath());
@@ -42,5 +58,14 @@ int main(int argc, char *argv[])
     // 注册自定义主题
     CustomTheme::instance()->registerAll();
 
-    return yefsApp.run();
+    int ret = yefsApp.run();
+    qDebug() << "[main] yefsApp.run() returned:" << ret;
+
+    if (s_logFile) {
+        s_logFile->close();
+        delete s_logFile;
+        s_logFile = nullptr;
+    }
+
+    return ret;
 }

@@ -239,6 +239,7 @@ HusWindow {
 
     // 确保窗口关闭时完全退出应用程序
     onClosing: (close) => {
+        console.log("[Main] Window closing, calling Qt.quit()");
         Qt.quit()
     }
 

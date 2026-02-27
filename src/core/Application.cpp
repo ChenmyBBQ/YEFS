@@ -32,6 +32,23 @@ Application::Application(QGuiApplication* app, QObject* parent)
 
 Application::~Application()
 {
+    cleanup();
+}
+
+void Application::cleanup()
+{
+    if (!m_engine)
+        return;
+
+    qDebug() << "[Application] Cleaning up...";
+
+    // 先销毁 QML 引擎，触发所有 QML 组件（包括 MapLibre Map）的销毁，
+    // 释放 MapLibre 内部的 RunLoop / AsyncTask / HTTPFileSource 等资源，
+    // 避免这些事件源阻止 QCoreApplication::exec() 返回。
+    delete m_engine;
+    m_engine = nullptr;
+
+    qDebug() << "[Application] Cleanup complete";
 }
 
 bool Application::initialize()
@@ -85,6 +102,9 @@ bool Application::initialize()
     // 设置连接
     setupConnections();
 
+    // 连接 aboutToQuit 信号，在事件循环退出前清理资源
+    connect(m_app, &QGuiApplication::aboutToQuit, this, &Application::cleanup);
+
     qDebug() << "[Application] Initialization complete";
     return true;
 }
@@ -105,7 +125,9 @@ int Application::run()
     // 发送应用就绪消息
     MessageBus::instance()->publish(Topics::APP_READY, true);
 
-    return m_app->exec();
+    int exitCode = m_app->exec();
+    qDebug() << "[Application] exec() returned with code:" << exitCode;
+    return exitCode;
 }
 
 void Application::registerQmlTypes()
