@@ -187,9 +187,10 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 
 # Copy HuskarUI QML module files to output directory
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_BINARY_DIR}/HuskarUI/qml/HuskarUI
-        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/HuskarUI
+    COMMAND ${CMAKE_COMMAND}
+        -DSRC_DIR=${CMAKE_BINARY_DIR}/HuskarUI/qml/HuskarUI
+        -DDST_DIR=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/HuskarUI
+        -P ${CMAKE_SOURCE_DIR}/cmake/CopyDirectoryIfDifferent.cmake
     COMMENT "Copying HuskarUI QML modules to output directory"
 )
 
@@ -215,9 +216,10 @@ if(TARGET declarative_maplibre)
     add_dependencies(${PROJECT_NAME} declarative_maplibre)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/MapLibre
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_BINARY_DIR}/3rdparty/maplibre-native-qt/src/quick/plugins/MapLibre
-            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/MapLibre
+        COMMAND ${CMAKE_COMMAND}
+            -DSRC_DIR=${CMAKE_BINARY_DIR}/3rdparty/maplibre-native-qt/src/quick/plugins/MapLibre
+            -DDST_DIR=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/MapLibre
+            -P ${CMAKE_SOURCE_DIR}/cmake/CopyDirectoryIfDifferent.cmake
         COMMENT "Copying MapLibre QML module"
     )
 endif()
@@ -226,9 +228,10 @@ if(TARGET declarative_maplibre_locationplugin)
     add_dependencies(${PROJECT_NAME} declarative_maplibre_locationplugin)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/MapLibre/Location
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_BINARY_DIR}/3rdparty/maplibre-native-qt/src/location/plugins/MapLibre/Location
-            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/MapLibre/Location
+        COMMAND ${CMAKE_COMMAND}
+            -DSRC_DIR=${CMAKE_BINARY_DIR}/3rdparty/maplibre-native-qt/src/location/plugins/MapLibre/Location
+            -DDST_DIR=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/MapLibre/Location
+            -P ${CMAKE_SOURCE_DIR}/cmake/CopyDirectoryIfDifferent.cmake
         COMMENT "Copying MapLibre Location QML module"
     )
 endif()
