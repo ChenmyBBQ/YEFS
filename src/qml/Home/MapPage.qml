@@ -10,6 +10,12 @@ Rectangle {
     id: root
     color: HusTheme.Primary.colorBgContainer
 
+    property real mouseLatitude: NaN
+    property real mouseLongitude: NaN
+    property string mouseLatLonText: "--"
+    property string mouseUtmText: "--"
+    property string mouseMgrsText: "--"
+
     Component.onCompleted: {
         console.log('[MapPage] Component loaded, airspacePanelVisible:', airspacePanelVisible)
     }
@@ -18,6 +24,31 @@ Rectangle {
     function getMapStyleUrl() {
         let url = SettingsManager.getValue("map", "styleUrl", "");
         return url || "https://demotiles.maplibre.org/style.json";
+    }
+
+    function clearMouseCoordinate() {
+        mouseLatitude = NaN
+        mouseLongitude = NaN
+        mouseLatLonText = "--"
+        mouseUtmText = "--"
+        mouseMgrsText = "--"
+    }
+
+    function updateMouseCoordinate(pos) {
+        let coord = mapView.coordinateForPixel(pos)
+        if (!coord || coord.length !== 2)
+            return
+
+        let latitude = coord[0]
+        let longitude = coord[1]
+        if (!isFinite(latitude) || !isFinite(longitude))
+            return
+
+        mouseLatitude = latitude
+        mouseLongitude = longitude
+        mouseLatLonText = CoordinateConverter.formatLatLon(latitude, longitude, 6)
+        mouseUtmText = CoordinateConverter.latLonToUtmText(latitude, longitude)
+        mouseMgrsText = CoordinateConverter.latLonToMgrsText(latitude, longitude)
     }
 
     // 监听设置变化
@@ -128,6 +159,17 @@ Rectangle {
                 if (coord && coord.length === 2) {
                     MapLibreEngine.onMapClicked(coord[0], coord[1])
                 }
+            }
+        }
+
+        HoverHandler {
+            acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+            onPointChanged: {
+                root.updateMouseCoordinate(point.position)
+            }
+            onHoveredChanged: {
+                if (!hovered)
+                    root.clearMouseCoordinate()
             }
         }
 
@@ -381,7 +423,8 @@ Rectangle {
         anchors.left: parent.left
         anchors.right: parent.right
         height: 28
-        color: HusTheme.Primary.colorBgContainer
+        z: 45
+        color: HusThemeFunctions.alpha(HusTheme.Primary.colorBgContainer, 0.78)
 
         RowLayout {
             anchors.fill: parent
@@ -390,15 +433,7 @@ Rectangle {
             spacing: 20
 
             HusText {
-                text: qsTr('就绪')
-                font.pixelSize: 12
-                color: HusTheme.Primary.colorTextSecondary
-            }
-
-            Item { Layout.fillWidth: true }
-
-            HusText {
-                text: qsTr('缩放: ') + mapView.zoomLevel.toFixed(1)
+                text: qsTr('经纬度: ') + root.mouseLatLonText
                 font.pixelSize: 12
                 color: HusTheme.Primary.colorTextSecondary
             }
@@ -409,7 +444,18 @@ Rectangle {
             }
 
             HusText {
-                text: mapView.coordinate[0].toFixed(4) + '°, ' + mapView.coordinate[1].toFixed(4) + '°'
+                text: qsTr('UTM: ') + root.mouseUtmText
+                font.pixelSize: 12
+                color: HusTheme.Primary.colorTextSecondary
+            }
+
+            HusDivider {
+                Layout.preferredHeight: 14
+                orientation: Qt.Vertical
+            }
+
+            HusText {
+                text: qsTr('MGRS: ') + root.mouseMgrsText
                 font.pixelSize: 12
                 color: HusTheme.Primary.colorTextSecondary
             }
@@ -420,7 +466,7 @@ Rectangle {
     Loader {
         id: layerPanel
         anchors.top: parent.top
-        anchors.bottom: statusBar.top
+        anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.margins: 15
         visible: false
@@ -445,7 +491,7 @@ Rectangle {
     Loader {
         id: onlineMapPanel
         anchors.top: parent.top
-        anchors.bottom: statusBar.top
+        anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.margins: 15
         visible: false
@@ -645,8 +691,8 @@ Rectangle {
     // 绘制状态提�?(底部中央)
     Rectangle {
         id: drawingHint
-        anchors.bottom: statusBar.top
-        anchors.bottomMargin: 10
+        anchors.bottom: parent.bottom
+        anchors.bottomMargin: statusBar.height + 10
         anchors.horizontalCenter: parent.horizontalCenter
         height: 40
         width: drawingHintRow.width + 24
@@ -695,7 +741,7 @@ Rectangle {
     Rectangle {
         id: airspaceListPanel
         anchors.top: parent.top
-        anchors.bottom: statusBar.top
+        anchors.bottom: parent.bottom
         anchors.right: parent.right
         anchors.margins: 15
         width: 320
