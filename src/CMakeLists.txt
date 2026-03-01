@@ -70,6 +70,8 @@ qt_add_qml_module(${PROJECT_NAME}
     SOURCES
         core/MessageBus.h
         core/MessageBus.cpp
+        core/CoordinateConverter.h
+        core/CoordinateConverter.cpp
         core/AppIconManager.h
         core/AppIconManager.cpp
         core/NerdIcon.h
@@ -109,6 +111,7 @@ qt_add_resources(${PROJECT_NAME} "images"
     PREFIX "/YEFSApp"
     FILES
         resources/images/YEFS.svg
+    resources/images/YEFS.ico
         resources/images/switch_effect1.jpg
         resources/images/switch_effect2.jpg
 )
@@ -158,6 +161,19 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
 )
+
+if(WIN32)
+    set(YEFS_APP_ICON "${CMAKE_CURRENT_SOURCE_DIR}/resources/images/YEFS.ico")
+    set(YEFS_WIN_RC "${CMAKE_CURRENT_BINARY_DIR}/yefs_app_icon.rc")
+
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/resources/windows/yefs_app_icon.rc.in
+        ${YEFS_WIN_RC}
+        @ONLY
+    )
+
+    target_sources(${PROJECT_NAME} PRIVATE ${YEFS_WIN_RC})
+endif()
 
 # ============================================================================
 # 包含目录

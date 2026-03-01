@@ -2,6 +2,7 @@
 #include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QQuickWindow>
+#include <QIcon>
 #include <QMapLibre/Utils>
 #include <QLoggingCategory>
 #include <QFile>
@@ -46,6 +47,7 @@ int main(int argc, char *argv[])
     s_defaultHandler = qInstallMessageHandler(fileMessageHandler);
 
     QGuiApplication app(argc, argv);
+    app.setWindowIcon(QIcon(QStringLiteral(":/YEFSApp/resources/images/YEFS.ico")));
     app.addLibraryPath(app.applicationDirPath());
 
     // 创建并初始化 YEFS 应用
