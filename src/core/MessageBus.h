@@ -26,8 +26,8 @@ public:
     static MessageBus* instance();
     static MessageBus* create(QQmlEngine* qmlEngine, QJSEngine* jsEngine);
 
-    // C++ API
-    void publish(const QString& topic, const QVariant& data = QVariant());
+    // C++ API (Q_INVOKABLE 以支持 QMetaObject::invokeMethod 调用)
+    Q_INVOKABLE void publish(const QString& topic, const QVariant& data = QVariant());
     void subscribe(const QString& topic, QObject* receiver, const char* slot);
     void unsubscribe(const QString& topic, QObject* receiver);
     void unsubscribeAll(QObject* receiver);

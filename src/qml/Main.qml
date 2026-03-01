@@ -454,7 +454,27 @@ HusWindow {
                         containerLoader.source = data.source;
                         containerLoader.visible = true;
                         console.debug('onClickMenu', deep, key, keyPath, JSON.stringify(data));
+
+                        // 插件面板控制：通过 MessageBus 通知 MapPage
+                        if (key === 'NewAirspace') {
+                            MessageBus.send('airspace-manager/new', {});
+                        } else if (key === 'AirspaceManager') {
+                            MessageBus.send('airspace-manager/show', {});
+                        } else {
+                            MessageBus.send('airspace-manager/hide', {});
+                        }
                     }
+                }
+            }
+        }
+
+        // 工具栏关闭时重置菜单选中状态，使再次点击同一菜单项能正常触发
+        Connections {
+            target: MessageBus
+            function onMessage(topic, data) {
+                if (topic === 'airspace-manager/hide') {
+                    // 将菜单选中重置回 MapPage，解除 HusMenu 的同项重复点击守卫
+                    yefsMenu.gotoMenu('MapPage');
                 }
             }
         }

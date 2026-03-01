@@ -70,6 +70,8 @@ qt_add_qml_module(${PROJECT_NAME}
     SOURCES
         core/MessageBus.h
         core/MessageBus.cpp
+        core/AppIconManager.h
+        core/AppIconManager.cpp
         core/PluginManager.h
         core/PluginManager.cpp
         core/MapLibreEngine.h
@@ -107,6 +109,26 @@ qt_add_resources(${PROJECT_NAME} "images"
         resources/images/YEFS.svg
         resources/images/switch_effect1.jpg
         resources/images/switch_effect2.jpg
+)
+
+qt_add_resources(${PROJECT_NAME} "shape_icons"
+    PREFIX "/YEFSApp"
+    FILES
+        resources/icons/shapes/shape_rectangle.svg
+        resources/icons/shapes/shape_square.svg
+        resources/icons/shapes/shape_circle.svg
+        resources/icons/shapes/shape_polygon.svg
+        resources/icons/shapes/shape_line.svg
+        resources/icons/shapes/shape_ring.svg
+        resources/icons/shapes/shape_arc.svg
+        resources/icons/shapes/shape_sector.svg
+        resources/icons/shapes/shape_pie_segment.svg
+)
+
+qt_add_resources(${PROJECT_NAME} "fonts"
+    PREFIX "/YEFSApp"
+    FILES
+        resources/font/SymbolsNerdFont-Regular.ttf
 )
 
 # 着色器资源
@@ -167,6 +189,9 @@ add_dependencies(${PROJECT_NAME} huskaruibasicplugin huskaruiimplplugin)
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         $<TARGET_FILE:HuskarUIBasic>
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:HuskarUIImpl>
         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     COMMENT "Copying HuskarUI DLL to output directory"
 )
