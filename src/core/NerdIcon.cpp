@@ -16,4 +16,10 @@ NerdIcon *NerdIcon::create(QQmlEngine * /*qmlEngine*/, QJSEngine * /*jsEngine*/)
     return instance();
 }
 
+void NerdIcon::destroy()
+{
+    delete s_instance;
+    s_instance = nullptr;
+}
+
 } // namespace YEFS

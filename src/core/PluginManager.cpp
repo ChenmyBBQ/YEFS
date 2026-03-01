@@ -1,5 +1,8 @@
 #include "PluginManager.h"
 #include "MessageBus.h"
+#include "MapLibreEngine.h"
+#include "SettingsManager.h"
+#include "MapSourceManager.h"
 #include <QCoreApplication>
 #include <QDir>
 #include <QPluginLoader>
@@ -22,6 +25,15 @@ public:
     QObject* getService(const QString& serviceName) override {
         if (serviceName == "MessageBus") {
             return MessageBus::instance();
+        }
+        if (serviceName == "MapLibreEngine") {
+            return MapLibreEngine::instance();
+        }
+        if (serviceName == "SettingsManager") {
+            return SettingsManager::instance();
+        }
+        if (serviceName == "MapSourceManager") {
+            return MapSourceManager::instance();
         }
         // 可以添加更多服务
         return nullptr;
@@ -85,6 +97,12 @@ PluginManager* PluginManager::create(QQmlEngine* qmlEngine, QJSEngine* jsEngine)
     Q_UNUSED(qmlEngine)
     Q_UNUSED(jsEngine)
     return instance();
+}
+
+void PluginManager::destroy()
+{
+    delete s_instance;
+    s_instance = nullptr;
 }
 
 void PluginManager::createPluginContext()

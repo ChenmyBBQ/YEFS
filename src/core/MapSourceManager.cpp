@@ -22,6 +22,12 @@ MapSourceManager* MapSourceManager::create(QQmlEngine* qmlEngine, QJSEngine* jsE
     return instance();
 }
 
+void MapSourceManager::destroy()
+{
+    delete s_instance;
+    s_instance = nullptr;
+}
+
 MapSourceManager::MapSourceManager(QObject* parent)
     : QObject(parent)
 {

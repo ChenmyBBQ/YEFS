@@ -25,6 +25,7 @@ class MessageBus : public QObject
 public:
     static MessageBus* instance();
     static MessageBus* create(QQmlEngine* qmlEngine, QJSEngine* jsEngine);
+    static void destroy();
 
     // C++ API (Q_INVOKABLE 以支持 QMetaObject::invokeMethod 调用)
     Q_INVOKABLE void publish(const QString& topic, const QVariant& data = QVariant());

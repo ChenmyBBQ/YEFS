@@ -22,6 +22,7 @@ class MapLibreEngine : public IMapEngine
 public:
     static MapLibreEngine* instance();
     static MapLibreEngine* create(QQmlEngine* qmlEngine, QJSEngine* jsEngine);
+    static void destroy();
 
     // IMapEngine 接口实现
     QString name() const override { return QStringLiteral("MapLibre"); }

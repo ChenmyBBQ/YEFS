@@ -29,6 +29,7 @@ class SettingsManager : public QObject
 public:
     static SettingsManager* create(QQmlEngine *qmlEngine, QJSEngine *jsEngine);
     static SettingsManager* instance();
+    static void destroy();
 
     explicit SettingsManager(QObject *parent = nullptr);
     ~SettingsManager() override;

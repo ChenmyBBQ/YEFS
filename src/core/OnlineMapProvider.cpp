@@ -106,6 +106,12 @@ OnlineMapProviderManager* OnlineMapProviderManager::create(QQmlEngine* qmlEngine
     return instance();
 }
 
+void OnlineMapProviderManager::destroy()
+{
+    delete s_instance;
+    s_instance = nullptr;
+}
+
 OnlineMapProviderManager::OnlineMapProviderManager(QObject* parent)
     : QObject(parent)
 {

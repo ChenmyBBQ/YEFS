@@ -75,3 +75,6 @@ endif()
 
 #Your project
 add_subdirectory(src)
+
+# Plugins
+add_subdirectory(plugins/AirspaceManagerPlugin)

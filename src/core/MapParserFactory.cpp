@@ -22,6 +22,12 @@ MapParserFactory* MapParserFactory::create(QQmlEngine* qmlEngine, QJSEngine* jsE
     return instance();
 }
 
+void MapParserFactory::destroy()
+{
+    delete s_instance;
+    s_instance = nullptr;
+}
+
 MapParserFactory::MapParserFactory(QObject* parent)
     : QObject(parent)
 {

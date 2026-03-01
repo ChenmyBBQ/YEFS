@@ -18,6 +18,12 @@ SettingsManager* SettingsManager::create(QQmlEngine *qmlEngine, QJSEngine *jsEng
     return instance();
 }
 
+void SettingsManager::destroy()
+{
+    delete s_instance;  // 析构函数会自动保存 m_dirty 的设置
+    s_instance = nullptr;
+}
+
 SettingsManager* SettingsManager::instance()
 {
     if (!s_instance) {

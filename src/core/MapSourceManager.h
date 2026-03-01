@@ -26,6 +26,7 @@ class MapSourceManager : public QObject
 public:
     static MapSourceManager* instance();
     static MapSourceManager* create(QQmlEngine* qmlEngine, QJSEngine* jsEngine);
+    static void destroy();
 
     // 数据源管理
     Q_INVOKABLE void addSource(QObject* source);

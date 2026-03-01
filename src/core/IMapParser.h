@@ -68,6 +68,7 @@ class MapParserFactory : public QObject
 public:
     static MapParserFactory* instance();
     static MapParserFactory* create(QQmlEngine* qmlEngine, QJSEngine* jsEngine);
+    static void destroy();
 
     // 注册解析器
     void registerParser(IMapParser* parser);

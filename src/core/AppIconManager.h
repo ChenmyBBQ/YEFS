@@ -64,6 +64,7 @@ class AppIconManager : public QObject
 public:
     static AppIconManager *instance();
     static AppIconManager *create(QQmlEngine *qmlEngine, QJSEngine *jsEngine);
+    static void destroy();
 
     // ── 基本操作 ────────────────────────────────────────────
     QString close()      const { return QStringLiteral("\uf00d"); }  // fa-times

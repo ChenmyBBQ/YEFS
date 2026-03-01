@@ -72,6 +72,8 @@ qt_add_qml_module(${PROJECT_NAME}
         core/MessageBus.cpp
         core/AppIconManager.h
         core/AppIconManager.cpp
+        core/NerdIcon.h
+        core/NerdIcon.cpp
         core/PluginManager.h
         core/PluginManager.cpp
         core/MapLibreEngine.h

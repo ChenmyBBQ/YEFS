@@ -16,4 +16,10 @@ AppIconManager *AppIconManager::create(QQmlEngine * /*qmlEngine*/, QJSEngine * /
     return instance();
 }
 
+void AppIconManager::destroy()
+{
+    delete s_instance;
+    s_instance = nullptr;
+}
+
 } // namespace YEFS

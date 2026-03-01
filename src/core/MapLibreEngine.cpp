@@ -33,6 +33,12 @@ MapLibreEngine* MapLibreEngine::create(QQmlEngine* qmlEngine, QJSEngine* jsEngin
     return instance();
 }
 
+void MapLibreEngine::destroy()
+{
+    delete s_instance;
+    s_instance = nullptr;
+}
+
 QUrl MapLibreEngine::qmlComponent() const
 {
     return QUrl(QStringLiteral("qrc:/YEFS/qml/Map/MapLibreView.qml"));

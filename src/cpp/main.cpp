@@ -49,8 +49,17 @@ int main(int argc, char *argv[])
     app.addLibraryPath(app.applicationDirPath());
 
     // 创建并初始化 YEFS 应用
+    // 注册日志文件关闭为退出后例程，确保任何退出路径都能关闭文件
+    qAddPostRoutine([]() {
+        if (s_logFile) {
+            s_logFile->close();
+            delete s_logFile;
+            s_logFile = nullptr;
+        }
+    });
+
     YEFS::Application yefsApp(&app);
-    
+
     if (!yefsApp.initialize()) {
         return -1;
     }
@@ -60,12 +69,6 @@ int main(int argc, char *argv[])
 
     int ret = yefsApp.run();
     qDebug() << "[main] yefsApp.run() returned:" << ret;
-
-    if (s_logFile) {
-        s_logFile->close();
-        delete s_logFile;
-        s_logFile = nullptr;
-    }
 
     return ret;
 }

@@ -55,6 +55,7 @@ class NerdIcon : public QObject
 public:
     static NerdIcon *instance();
     static NerdIcon *create(QQmlEngine *qmlEngine, QJSEngine *jsEngine);
+    static void destroy();
 
     // ── 基本操作 ──────────────────────────────────────────
     QString close()      const { return QStringLiteral("\uf00d"); }  // fa-times
