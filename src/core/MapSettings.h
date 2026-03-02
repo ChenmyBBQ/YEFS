@@ -65,6 +65,9 @@ public:
     // 获取指定提供商的名称
     Q_INVOKABLE QString getProviderName(int index) const;
     
+    // 获取缩略图URL
+    Q_INVOKABLE QString getThumbnailUrl(int index) const;
+    
     // 保存配置
     Q_INVOKABLE void save();
     

@@ -22,7 +22,9 @@ Rectangle {
 
     // 获取配置的样式URL
     function getMapStyleUrl() {
-        let url = SettingsManager.getValue("map", "styleUrl", "");
+        let url = MapSettings.styleUrl;
+        if (!url || url.length === 0)
+            url = SettingsManager.getValue("map", "styleUrl", "");
         return url || "https://demotiles.maplibre.org/style.json";
     }
 
@@ -59,6 +61,14 @@ Rectangle {
                 console.log("[MapPage] Style URL changed:", root.getMapStyleUrl());
                 mapView.style = root.getMapStyleUrl();
             }
+        }
+    }
+
+    Connections {
+        target: MapSettings
+        function onStyleUrlChanged() {
+            console.log("[MapPage] MapSettings style changed:", root.getMapStyleUrl());
+            mapView.style = root.getMapStyleUrl();
         }
     }
 
