@@ -19,6 +19,8 @@ set(HUSKARUI_PLUGIN_OUTPUT_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/HuskarUI/
 set(BUILD_HUSKARUI_STATIC_LIBRARY OFF)
 set(BUILD_HUSKARUI_ON_DESKTOP_PLATFORM ON)
 set(INSTALL_HUSKARUI_IN_DEFAULT_LOCATION ON)
+set(BUILD_HUSKARUI_GALLERY OFF CACHE BOOL "Build HuskarUI Gallery." FORCE)
+set(QT_QML_GENERATE_QMLLS_INI OFF CACHE BOOL "Disable auto qmlls ini generation." FORCE)
 
 # MapLibre Native Qt options
 set(MLN_QT_WITH_LOCATION ON)
@@ -73,3 +75,6 @@ endif()
 
 #Your project
 add_subdirectory(src)
+
+# Plugins
+add_subdirectory(plugins/AirspaceManagerPlugin)

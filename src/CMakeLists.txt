@@ -70,6 +70,12 @@ qt_add_qml_module(${PROJECT_NAME}
     SOURCES
         core/MessageBus.h
         core/MessageBus.cpp
+        core/CoordinateConverter.h
+        core/CoordinateConverter.cpp
+        core/AppIconManager.h
+        core/AppIconManager.cpp
+        core/NerdIcon.h
+        core/NerdIcon.cpp
         core/PluginManager.h
         core/PluginManager.cpp
         core/MapLibreEngine.h
@@ -105,8 +111,29 @@ qt_add_resources(${PROJECT_NAME} "images"
     PREFIX "/YEFSApp"
     FILES
         resources/images/YEFS.svg
+    resources/images/YEFS.ico
         resources/images/switch_effect1.jpg
         resources/images/switch_effect2.jpg
+)
+
+qt_add_resources(${PROJECT_NAME} "shape_icons"
+    PREFIX "/YEFSApp"
+    FILES
+        resources/icons/shapes/shape_rectangle.svg
+        resources/icons/shapes/shape_square.svg
+        resources/icons/shapes/shape_circle.svg
+        resources/icons/shapes/shape_polygon.svg
+        resources/icons/shapes/shape_line.svg
+        resources/icons/shapes/shape_ring.svg
+        resources/icons/shapes/shape_arc.svg
+        resources/icons/shapes/shape_sector.svg
+        resources/icons/shapes/shape_pie_segment.svg
+)
+
+qt_add_resources(${PROJECT_NAME} "fonts"
+    PREFIX "/YEFSApp"
+    FILES
+        resources/font/SymbolsNerdFont-Regular.ttf
 )
 
 # 着色器资源
@@ -134,6 +161,19 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
     MACOSX_BUNDLE TRUE
     WIN32_EXECUTABLE TRUE
 )
+
+if(WIN32)
+    set(YEFS_APP_ICON "${CMAKE_CURRENT_SOURCE_DIR}/resources/images/YEFS.ico")
+    set(YEFS_WIN_RC "${CMAKE_CURRENT_BINARY_DIR}/yefs_app_icon.rc")
+
+    configure_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/resources/windows/yefs_app_icon.rc.in
+        ${YEFS_WIN_RC}
+        @ONLY
+    )
+
+    target_sources(${PROJECT_NAME} PRIVATE ${YEFS_WIN_RC})
+endif()
 
 # ============================================================================
 # 包含目录
@@ -168,6 +208,9 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
         $<TARGET_FILE:HuskarUIBasic>
         ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:HuskarUIImpl>
+        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}
     COMMENT "Copying HuskarUI DLL to output directory"
 )
 
@@ -187,9 +230,10 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 
 # Copy HuskarUI QML module files to output directory
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${CMAKE_BINARY_DIR}/HuskarUI/qml/HuskarUI
-        ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/HuskarUI
+    COMMAND ${CMAKE_COMMAND}
+        -DSRC_DIR=${CMAKE_BINARY_DIR}/HuskarUI/qml/HuskarUI
+        -DDST_DIR=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/HuskarUI
+        -P ${CMAKE_SOURCE_DIR}/cmake/CopyDirectoryIfDifferent.cmake
     COMMENT "Copying HuskarUI QML modules to output directory"
 )
 
@@ -215,9 +259,10 @@ if(TARGET declarative_maplibre)
     add_dependencies(${PROJECT_NAME} declarative_maplibre)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/MapLibre
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_BINARY_DIR}/3rdparty/maplibre-native-qt/src/quick/plugins/MapLibre
-            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/MapLibre
+        COMMAND ${CMAKE_COMMAND}
+            -DSRC_DIR=${CMAKE_BINARY_DIR}/3rdparty/maplibre-native-qt/src/quick/plugins/MapLibre
+            -DDST_DIR=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/MapLibre
+            -P ${CMAKE_SOURCE_DIR}/cmake/CopyDirectoryIfDifferent.cmake
         COMMENT "Copying MapLibre QML module"
     )
 endif()
@@ -226,9 +271,10 @@ if(TARGET declarative_maplibre_locationplugin)
     add_dependencies(${PROJECT_NAME} declarative_maplibre_locationplugin)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/MapLibre/Location
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-            ${CMAKE_BINARY_DIR}/3rdparty/maplibre-native-qt/src/location/plugins/MapLibre/Location
-            ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/MapLibre/Location
+        COMMAND ${CMAKE_COMMAND}
+            -DSRC_DIR=${CMAKE_BINARY_DIR}/3rdparty/maplibre-native-qt/src/location/plugins/MapLibre/Location
+            -DDST_DIR=${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/MapLibre/Location
+            -P ${CMAKE_SOURCE_DIR}/cmake/CopyDirectoryIfDifferent.cmake
         COMMENT "Copying MapLibre Location QML module"
     )
 endif()

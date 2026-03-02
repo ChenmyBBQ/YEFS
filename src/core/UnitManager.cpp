@@ -20,6 +20,12 @@ UnitManager* UnitManager::create(QQmlEngine* qmlEngine, QJSEngine* jsEngine)
     return instance();
 }
 
+void UnitManager::destroy()
+{
+    delete s_instance;
+    s_instance = nullptr;
+}
+
 UnitManager* UnitManager::instance()
 {
     if (!s_instance) {

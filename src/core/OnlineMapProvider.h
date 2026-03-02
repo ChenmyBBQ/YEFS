@@ -85,6 +85,7 @@ class OnlineMapProviderManager : public QObject
 public:
     static OnlineMapProviderManager* instance();
     static OnlineMapProviderManager* create(QQmlEngine* qmlEngine, QJSEngine* jsEngine);
+    static void destroy();
 
     // 预定义提供商
     enum ProviderType {

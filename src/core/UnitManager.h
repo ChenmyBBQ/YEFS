@@ -54,6 +54,7 @@ class UnitManager : public QObject
 public:
     static UnitManager* create(QQmlEngine* qmlEngine, QJSEngine* jsEngine);
     static UnitManager* instance();
+    static void destroy();
 
     explicit UnitManager(QObject* parent = nullptr);
     ~UnitManager() override = default;

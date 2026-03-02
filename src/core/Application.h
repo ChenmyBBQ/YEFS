@@ -43,6 +43,7 @@ private:
     void registerQmlSingletons();
     void initializeMapParsers();
     void setupConnections();
+    void cleanup();
 
     QGuiApplication* m_app = nullptr;
     QQmlApplicationEngine* m_engine = nullptr;

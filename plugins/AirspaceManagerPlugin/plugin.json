@@ -1,0 +1,7 @@
+{
+    "id": "airspace-manager",
+    "name": "空域管理",
+    "version": "1.0.0",
+    "author": "YEFS Team",
+    "description": "空域创建、绘制与管理插件"
+}

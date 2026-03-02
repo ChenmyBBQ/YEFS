@@ -5,11 +5,16 @@
 #include "IMapParser.h"
 #include "MapSourceManager.h"
 #include "OnlineMapProvider.h"
+#include "SettingsManager.h"
+#include "UnitManager.h"
+#include "AppIconManager.h"
+#include "NerdIcon.h"
 #include "parsers/GeoJSONParser.h"
 #include "parsers/GPXParser.h"
 #include "parsers/KMLParser.h"
 
 #include <QQuickWindow>
+#include <QFontDatabase>
 #include <QMapLibre/Utils>
 #include <QLoggingCategory>
 #include <QDebug>
@@ -32,6 +37,37 @@ Application::Application(QGuiApplication* app, QObject* parent)
 
 Application::~Application()
 {
+    cleanup();
+}
+
+void Application::cleanup()
+{
+    if (!m_engine)
+        return;
+
+    qDebug() << "[Application] Cleaning up...";
+
+    // Step 1: 先关闭插件（插件可能持有后台线程或定时器）
+    // PluginManager 析构会依次调用每个插件的 shutdown()
+    PluginManager::destroy();
+
+    // Step 2: 销毁 QML 引擎，触发所有 QML 组件（包括 MapLibre Map）的销毁
+    // MapLibre 内部的 RunLoop / RenderThread / HTTPFileSource 等在这里被释放
+    delete m_engine;
+    m_engine = nullptr;
+
+    // Step 3: 按依赖逆序销毁剩余单例（delete nullptr 在 C++ 中是安全的无操作）
+    UnitManager::destroy();
+    MapSourceManager::destroy();
+    OnlineMapProviderManager::destroy();
+    MapParserFactory::destroy();
+    MapLibreEngine::destroy();
+    AppIconManager::destroy();
+    NerdIcon::destroy();
+    SettingsManager::destroy();   // 析构时自动保存未刷新的设置
+    MessageBus::destroy();        // 最后销毁消息总线
+
+    qDebug() << "[Application] Cleanup complete";
 }
 
 bool Application::initialize()
@@ -72,18 +108,27 @@ bool Application::initialize()
     // 初始化 HuskarUI
     HusApp::initialize(m_engine);
 
+    // 加载 Nerd Fonts 矢量图标库
+    int fontId = QFontDatabase::addApplicationFont(":/YEFSApp/resources/font/SymbolsNerdFont-Regular.ttf");
+    if (fontId == -1) {
+        qWarning() << "[Application] Failed to load SymbolsNerdFont-Regular.ttf";
+    }
+
     // 注册 QML 类型和单例
     registerQmlTypes();
     registerQmlSingletons();
 
-    // 初始化插件管理器
-    PluginManager::instance()->scanPlugins();
+    // 初始化并加载所有插件
+    PluginManager::instance()->loadAllPlugins();
 
     // 初始化地图解析系统
     initializeMapParsers();
 
     // 设置连接
     setupConnections();
+
+    // 连接 aboutToQuit 信号，在事件循环退出前清理资源
+    connect(m_app, &QGuiApplication::aboutToQuit, this, &Application::cleanup);
 
     qDebug() << "[Application] Initialization complete";
     return true;
@@ -105,7 +150,9 @@ int Application::run()
     // 发送应用就绪消息
     MessageBus::instance()->publish(Topics::APP_READY, true);
 
-    return m_app->exec();
+    int exitCode = m_app->exec();
+    qDebug() << "[Application] exec() returned with code:" << exitCode;
+    return exitCode;
 }
 
 void Application::registerQmlTypes()

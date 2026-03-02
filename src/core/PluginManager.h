@@ -29,6 +29,7 @@ class PluginManager : public QObject
 public:
     static PluginManager* instance();
     static PluginManager* create(QQmlEngine* qmlEngine, QJSEngine* jsEngine);
+    static void destroy();
 
     // 插件目录
     void addPluginPath(const QString& path);

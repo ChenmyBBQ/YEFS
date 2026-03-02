@@ -25,6 +25,12 @@ MessageBus* MessageBus::create(QQmlEngine* qmlEngine, QJSEngine* jsEngine)
     return instance();
 }
 
+void MessageBus::destroy()
+{
+    delete s_instance;
+    s_instance = nullptr;
+}
+
 void MessageBus::publish(const QString& topic, const QVariant& data)
 {
     // 发送全局信号

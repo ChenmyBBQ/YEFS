@@ -49,10 +49,18 @@ QtObject {
             iconSource: HusIcon.CloudOutlined,
             menuChildren: [
                 {
-                    key: 'AirspaceQuery',
-                    label: qsTr('空域查询'),
+                    key: 'NewAirspace',
+                    label: qsTr('新建空域'),
                     source: './Home/MapPage.qml',
-                    desc: qsTr('查询飞行空域信息')
+                    state: 'New',
+                    desc: qsTr('在地图上新建空域区域')
+                },
+                {
+                    key: 'AirspaceManager',
+                    label: qsTr('空域管理'),
+                    source: './Home/MapPage.qml',
+                    state: 'New',
+                    desc: qsTr('创建和管理空域区域')
                 },
                 {
                     key: 'RestrictedZone',
@@ -61,11 +69,10 @@ QtObject {
                     desc: qsTr('查看和管理禁飞区域')
                 },
                 {
-                    key: 'WeatherInfo',
-                    label: qsTr('气象信息'),
+                    key: 'AirspaceQuery',
+                    label: qsTr('空域查询'),
                     source: './Home/MapPage.qml',
-                    state: 'New',
-                    desc: qsTr('查看实时气象数据')
+                    desc: qsTr('查询飞行空域信息')
                 }
             ]
         },
