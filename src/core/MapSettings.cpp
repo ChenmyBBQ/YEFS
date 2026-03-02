@@ -4,6 +4,7 @@
  */
 
 #include "MapSettings.h"
+#include "SettingsManager.h"
 #include <QDebug>
 
 namespace YEFS {
@@ -27,7 +28,6 @@ MapSettings* MapSettings::instance()
 
 MapSettings::MapSettings(QObject *parent)
     : QObject(parent)
-    , m_settings("YEFS", "YEFS")
     , m_currentProviderIndex(0)
 {
     // 初始化可用的地图服务提供商
@@ -86,11 +86,10 @@ MapSettings::~MapSettings()
 
 void MapSettings::load()
 {
-    m_settings.beginGroup("Map");
-    m_currentProviderIndex = m_settings.value("providerIndex", 0).toInt();
-    m_customStyleUrl = m_settings.value("customStyleUrl", "").toString();
-    m_apiKey = m_settings.value("apiKey", "").toString();
-    m_settings.endGroup();
+    SettingsManager* settings = SettingsManager::instance();
+    m_currentProviderIndex = settings->getValue("map", "providerIndex", 0).toInt();
+    m_customStyleUrl = settings->getValue("map", "customStyleUrl", "").toString();
+    m_apiKey = settings->getValue("map", "apiKey", "").toString();
     
     // 确保索引有效
     if (m_currentProviderIndex < 0 || m_currentProviderIndex >= m_providers.size()) {
@@ -102,12 +101,11 @@ void MapSettings::load()
 
 void MapSettings::save()
 {
-    m_settings.beginGroup("Map");
-    m_settings.setValue("providerIndex", m_currentProviderIndex);
-    m_settings.setValue("customStyleUrl", m_customStyleUrl);
-    m_settings.setValue("apiKey", m_apiKey);
-    m_settings.endGroup();
-    m_settings.sync();
+    SettingsManager* settings = SettingsManager::instance();
+    settings->setValue("map", "providerIndex", m_currentProviderIndex);
+    settings->setValue("map", "customStyleUrl", m_customStyleUrl);
+    settings->setValue("map", "apiKey", m_apiKey);
+    settings->setValue("map", "styleUrl", m_styleUrl);
     
     qDebug() << "[MapSettings] Configuration saved";
 }

@@ -49,12 +49,12 @@ SettingsManager::~SettingsManager()
 
 void SettingsManager::ensureSettingsDir()
 {
-    QString dataPath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-    QDir dir(dataPath);
+    const QString configDirPath = QCoreApplication::applicationDirPath() + "/AppConfig";
+    QDir dir(configDirPath);
     if (!dir.exists()) {
         dir.mkpath(".");
     }
-    m_settingsPath = dataPath + "/settings.json";
+    m_settingsPath = configDirPath + "/setting.json";
     qDebug() << "[SettingsManager] Settings file path:" << m_settingsPath;
 }
 

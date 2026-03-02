@@ -7,7 +7,6 @@
 #define MAPSETTINGS_H
 
 #include <QObject>
-#include <QSettings>
 #include <QQmlEngine>
 #include <QVariantList>
 
@@ -84,8 +83,7 @@ private:
     void updateStyleUrl();
 
     static MapSettings* s_instance;
-    
-    QSettings m_settings;
+
     int m_currentProviderIndex;
     QString m_styleUrl;
     QString m_customStyleUrl;

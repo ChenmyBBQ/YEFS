@@ -11,14 +11,14 @@
 #include <QJsonObject>
 #include <QJsonDocument>
 #include <QFile>
-#include <QStandardPaths>
 #include <QDir>
+#include <QCoreApplication>
 
 namespace YEFS {
 
 /**
  * @class SettingsManager
- * @brief 管理应用程序设置，使用 settings.json 存储
+ * @brief 管理应用程序设置，使用 setting.json 存储
  */
 class SettingsManager : public QObject
 {
