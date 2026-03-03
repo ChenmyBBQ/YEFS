@@ -15,6 +15,7 @@ Rectangle {
     property string mouseLatLonText: "--"
     property string mouseUtmText: "--"
     property string mouseMgrsText: "--"
+    property string lastAppliedStyle: ""
 
     Component.onCompleted: {
         console.log('[MapPage] Component loaded, airspacePanelVisible:', airspacePanelVisible)
@@ -26,6 +27,23 @@ Rectangle {
         if (!url || url.length === 0)
             url = SettingsManager.getValue("map", "styleUrl", "");
         return url || "https://demotiles.maplibre.org/style.json";
+    }
+
+    function isInlineStyleJson(styleText) {
+        if (!styleText)
+            return false
+        let trimmed = styleText.trim()
+        return trimmed.length > 0 && (trimmed[0] === '{' || trimmed[0] === '[')
+    }
+
+    function applyConfiguredStyle() {
+        let styleValue = root.getMapStyleUrl()
+        if (!styleValue || styleValue.length === 0)
+            return
+
+        root.lastAppliedStyle = styleValue
+        console.log("[MapPage] Applying style:", styleValue)
+        mapView.style = styleValue
     }
 
     function clearMouseCoordinate() {
@@ -58,17 +76,35 @@ Rectangle {
         target: SettingsManager
         function onSettingsChanged(category, key) {
             if (category === "map" && key === "styleUrl") {
-                console.log("[MapPage] Style URL changed:", root.getMapStyleUrl());
-                mapView.style = root.getMapStyleUrl();
+                console.log("[MapPage] Style changed:", root.getMapStyleUrl());
+                root.applyConfiguredStyle();
             }
         }
     }
 
-    Connections {
-        target: MapSettings
-        function onStyleUrlChanged() {
-            console.log("[MapPage] MapSettings style changed:", root.getMapStyleUrl());
-            mapView.style = root.getMapStyleUrl();
+    Timer {
+        id: styleWatchTimer
+        interval: 250
+        repeat: true
+        running: true
+        onTriggered: {
+            let currentStyle = root.getMapStyleUrl()
+            if (currentStyle && currentStyle.length > 0 && currentStyle !== root.lastAppliedStyle) {
+                root.applyConfiguredStyle()
+            }
+        }
+    }
+
+    Timer {
+        id: styleApplyTimer
+        interval: 200
+        repeat: true
+        running: false
+        onTriggered: {
+            if (mapView.map) {
+                root.applyConfiguredStyle()
+                stop()
+            }
         }
     }
 
@@ -78,13 +114,14 @@ Rectangle {
         anchors.fill: parent
         focus: true
         
-        // 使用配置的样式URL
-        style: root.getMapStyleUrl()
+        // 默认先给一个可用URL，栅格JSON样式在组件完成后由 applyConfiguredStyle() 分流加载
+        style: "https://demotiles.maplibre.org/style.json"
         zoomLevel: SettingsManager.getValue("map", "defaultZoom", 2)
         coordinate: [39.9042, 116.4074]
 
         Component.onCompleted: {
             MapLibreEngine.setMapItem(mapView)
+            root.applyConfiguredStyle()
         }
 
         // ---------- GeoJSON 图层桥接函数 ----------

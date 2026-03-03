@@ -7,18 +7,27 @@ Rectangle {
     id: root
     width: 340
     height: parent ? parent.height : 600
-    color: HusThemeFunctions.alpha(HusTheme.Primary.colorBgContainer, 0.95)
+    radius: 8
+    clip: true
+    color: HusThemeFunctions.alpha(HusTheme.Primary.colorBgContainer, 0.68)
 
     readonly property string defaultMapTilerKey: "pIYKyqRw5KwCNhksntqa"
     property var categoryDefs: [
-        { "key": "MapTiler", "label": "MapTiler" },
-        { "key": "Google", "label": "Google 地图" },
-        { "key": "Bing", "label": "Bing 地图" },
-        { "key": "高德", "label": "高德地图" }
+        { "key": "MapTiler", "label": "MapTiler", "supportsKey": true, "supportsSecret": false },
+        { "key": "Google", "label": "Google 地图", "supportsKey": false, "supportsSecret": false },
+        { "key": "Bing", "label": "Bing 地图", "supportsKey": true, "supportsSecret": false },
+        { "key": "高德", "label": "高德地图", "supportsKey": true, "supportsSecret": true }
     ]
+
+    property var draftKeys: ({})
+    property var draftSecrets: ({})
+    property bool settingsVisible: false
 
     function providerIndicesByCategory(categoryKey) {
         var indices = []
+        if (!MapSettings.isCategoryVisible(categoryKey)) {
+            return indices
+        }
         var list = MapSettings.providers
         for (var i = 0; i < list.length; ++i) {
             var provider = list[i]
@@ -33,11 +42,43 @@ Rectangle {
         var p = MapSettings.providers[providerIndex]
         if (!p) return false
         if (p.category === "Bing") {
-            var k = MapSettings.apiKey
-            if (!k || k.length < 8 || k === defaultMapTilerKey)
+            var bingKey = MapSettings.getSourceKey("Bing")
+            if (!bingKey || bingKey.length < 8)
+                return false
+        } else if (p.category === "高德") {
+            var gaodeKey = MapSettings.getSourceKey("高德")
+            var gaodeSecret = MapSettings.getSourceSecret("高德")
+            if (!gaodeKey || gaodeKey.length < 8 || !gaodeSecret || gaodeSecret.length < 8)
                 return false
         }
         return true
+    }
+
+    function openSettings() {
+        var data = {}
+        var secretData = {}
+        for (var i = 0; i < root.categoryDefs.length; ++i) {
+            var c = root.categoryDefs[i]
+            data[c.key] = MapSettings.getSourceKey(c.key)
+            secretData[c.key] = MapSettings.getSourceSecret(c.key)
+        }
+        root.draftKeys = data
+        root.draftSecrets = secretData
+        root.settingsVisible = true
+    }
+
+    function closeSettingsAndApply() {
+        for (var i = 0; i < root.categoryDefs.length; ++i) {
+            var c = root.categoryDefs[i]
+            if (c.supportsKey) {
+                MapSettings.setSourceKey(c.key, root.draftKeys[c.key] || "")
+            }
+            if (c.supportsSecret) {
+                MapSettings.setSourceSecret(c.key, root.draftSecrets[c.key] || "")
+            }
+        }
+        root.settingsVisible = false
+        toast.success(qsTr("设置已更新"))
     }
 
     HusMessage {
@@ -51,8 +92,20 @@ Rectangle {
         anchors.fill: parent
         anchors.margins: 14
         spacing: 10
+        transform: Translate {
+            id: mainShift
+            x: root.settingsVisible ? -root.width : 0
+
+            Behavior on x {
+                NumberAnimation {
+                    duration: 10
+                    easing.type: Easing.InOutCubic
+                }
+            }
+        }
 
         Row {
+            id: headerRow
             width: parent.width
             height: 34
             HusText {
@@ -61,14 +114,28 @@ Rectangle {
                 font.weight: Font.DemiBold
                 anchors.verticalCenter: parent.verticalCenter
             }
+
+            Item { width: parent.width - 120; height: 1 }
+
+            HusIconButton {
+                width: 30
+                height: 30
+                iconSource: HusIcon.SettingOutlined
+                type: HusButton.Type_Default
+                anchors.verticalCenter: parent.verticalCenter
+                onClicked: root.openSettings()
+            }
         }
 
-        HusDivider { width: parent.width }
+        HusDivider {
+            id: topDivider
+            width: parent.width
+        }
 
         Item {
             id: listArea
             width: parent.width
-            height: Math.max(120, parent.height - 220)
+            height: Math.max(120, parent.height - headerRow.height - topDivider.height - bottomDivider.height - layoutRoot.spacing * 3)
 
             Flickable {
                 id: mapFlickable
@@ -176,7 +243,7 @@ Rectangle {
                                             HusText {
                                                 anchors.centerIn: parent
                                                 text: MapSettings.getProviderName(providerIndex)
-                                                color: HusTheme.Primary.colorText
+                                                color: HusTheme.Primary.colorTextBase
                                                 font.pixelSize: 12
                                                 font.weight: providerIndex === MapSettings.currentProviderIndex ? Font.DemiBold : Font.Normal
                                             }
@@ -187,7 +254,14 @@ Rectangle {
                                             cursorShape: Qt.PointingHandCursor
                                             onClicked: {
                                                 if (!root.canSwitchProvider(providerIndex)) {
-                                                    toast.error(qsTr("Bing 地图需要有效 Key，请先在下方输入。"))
+                                                    var provider = MapSettings.providers[providerIndex]
+                                                    var category = provider ? provider.category : ""
+                                                    if (category === "Bing")
+                                                        toast.error(qsTr("Bing 地图需要有效 Key，请先在设置页输入。"))
+                                                    else if (category === "高德")
+                                                        toast.error(qsTr("高德地图需要有效 Key 和安全密钥，请先在设置页输入。"))
+                                                    else
+                                                        toast.error(qsTr("当前底图不可用"))
                                                     return
                                                 }
                                                 MapSettings.currentProviderIndex = providerIndex
@@ -209,7 +283,7 @@ Rectangle {
                 anchors.top: parent.top
                 anchors.bottom: parent.bottom
                 anchors.right: parent.right
-                visible: mapFlickable.contentHeight > mapFlickable.height
+                visible: (mapFlickable.contentHeight - mapFlickable.height) > 12
                 color: HusThemeFunctions.alpha(HusTheme.Primary.colorBorder, 0.35)
 
                 Rectangle {
@@ -222,37 +296,169 @@ Rectangle {
             }
         }
 
-        HusDivider { width: parent.width }
-
-        Row {
+        HusDivider {
+            id: bottomDivider
             width: parent.width
-            height: 34
-            spacing: 8
+        }
+    }
 
-            HusText {
-                text: qsTr("地图 Key:")
-                font.pixelSize: 12
-                anchors.verticalCenter: parent.verticalCenter
-            }
+    Rectangle {
+        id: settingsOverlay
+        anchors.fill: parent
+        z: 100
+        radius: 8
+        clip: true
+        visible: root.settingsVisible || settingsShift.x < root.width
+        color: HusThemeFunctions.alpha(HusTheme.Primary.colorBgContainer, 0.68)
 
-            HusInput {
-                width: parent.width - 80
-                text: MapSettings.apiKey
-                placeholderText: qsTr("输入 MapTiler / Bing Key")
-                onEditingFinished: {
-                    MapSettings.apiKey = text
-                    toast.success(qsTr("已保存地图 Key"))
-                }
-            }
+        MouseArea {
+            anchors.fill: parent
+            enabled: root.settingsVisible
         }
 
-        HusButton {
-            width: parent.width
-            text: qsTr("还原默认设置")
-            type: HusButton.Type_Default
-            onClicked: {
-                MapSettings.reset()
-                toast.success(qsTr("已恢复默认底图"))
+        Item {
+            id: settingsPanel
+            anchors.fill: parent
+            transform: Translate {
+                id: settingsShift
+                x: root.settingsVisible ? 0 : root.width
+
+                Behavior on x {
+                    NumberAnimation {
+                        duration: 10
+                        easing.type: Easing.InOutCubic
+                    }
+                }
+            }
+
+            Column {
+                anchors.fill: parent
+                anchors.margins: 14
+                spacing: 10
+
+                Row {
+                    width: parent.width
+                    height: 34
+
+                    HusIconButton {
+                        width: 30
+                        height: 30
+                        iconSource: HusIcon.LeftOutlined
+                        type: HusButton.Type_Default
+                        anchors.verticalCenter: parent.verticalCenter
+                        onClicked: root.closeSettingsAndApply()
+                    }
+
+                    HusText {
+                        text: qsTr("底图源设置")
+                        font.pixelSize: 16
+                        font.weight: Font.DemiBold
+                        anchors.verticalCenter: parent.verticalCenter
+                        x: 42
+                    }
+                }
+
+                HusDivider { width: parent.width }
+
+                Flickable {
+                    id: settingsFlick
+                    width: parent.width
+                    height: parent.height - 58
+                    clip: true
+                    contentWidth: width
+                    contentHeight: settingsColumn.height + 12
+                    boundsBehavior: Flickable.StopAtBounds
+
+                    Column {
+                        id: settingsColumn
+                        width: settingsFlick.width - 10
+                        spacing: 12
+
+                    Repeater {
+                        model: root.categoryDefs
+
+                        delegate: Rectangle {
+                            required property var modelData
+                            width: parent.width
+                            height: modelData.supportsSecret ? 146 : (modelData.supportsKey ? 108 : 72)
+                            radius: HusTheme.Primary.radiusPrimary
+                            color: HusThemeFunctions.alpha(HusTheme.Primary.colorBgBase, 0.55)
+                            border.color: HusTheme.Primary.colorBorder
+
+                            Column {
+                                anchors.fill: parent
+                                anchors.margins: 10
+                                spacing: 8
+
+                                Row {
+                                    width: parent.width
+                                    spacing: 8
+
+                                    HusText {
+                                        text: modelData.label
+                                        font.pixelSize: 14
+                                        font.weight: Font.DemiBold
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+
+                                    Item { width: parent.width - 160; height: 1 }
+
+                                    HusText {
+                                        text: qsTr("显示")
+                                        anchors.verticalCenter: parent.verticalCenter
+                                    }
+
+                                    HusSwitch {
+                                        checked: MapSettings.isCategoryVisible(modelData.key)
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        onToggled: MapSettings.setCategoryVisible(modelData.key, checked)
+                                    }
+                                }
+
+                                HusInput {
+                                    visible: modelData.supportsKey
+                                    width: parent.width
+                                    text: root.draftKeys[modelData.key] || ""
+                                    placeholderText: modelData.key === "MapTiler"
+                                        ? qsTr("输入 MapTiler Key")
+                                        : (modelData.key === "Bing"
+                                            ? qsTr("输入 Bing Key")
+                                            : qsTr("输入 高德 Key"))
+                                    onTextChanged: {
+                                        var data = root.draftKeys
+                                        data[modelData.key] = text
+                                        root.draftKeys = data
+                                    }
+                                }
+
+                                HusInput {
+                                    visible: modelData.supportsSecret
+                                    width: parent.width
+                                    text: root.draftSecrets[modelData.key] || ""
+                                    echoMode: HusInput.Password
+                                    placeholderText: qsTr("输入 高德安全密钥")
+                                    onTextChanged: {
+                                        var data = root.draftSecrets
+                                        data[modelData.key] = text
+                                        root.draftSecrets = data
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                        HusButton {
+                            width: parent.width
+                            text: qsTr("恢复默认")
+                            type: HusButton.Type_Default
+                            onClicked: {
+                                MapSettings.reset()
+                                root.openSettings()
+                                toast.success(qsTr("已恢复默认设置"))
+                            }
+                        }
+                    }
+                }
             }
         }
     }

@@ -9,9 +9,6 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QJsonDocument>
-#include <QUrl>
-#include <QStandardPaths>
-#include <QFile>
 
 namespace YEFS {
 
@@ -74,17 +71,17 @@ MapSettings::MapSettings(QObject *parent)
             {"name", tr("高德 矢量")},
             {"category", "高德"},
             {"type", "raster"},
-            {"urlTemplate", "https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}"},
-            {"thumbnailUrl", "https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x=843&y=388&z=10"},
-            {"needsApiKey", false}
+            {"urlTemplate", "https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}&key={apiKey}&jscode={securityCode}"},
+            {"thumbnailUrl", "https://webrd01.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x=843&y=388&z=10&key={apiKey}&jscode={securityCode}"},
+            {"needsApiKey", true}
         },
         QVariantMap{
             {"name", tr("高德 卫星")},
             {"category", "高德"},
             {"type", "raster"},
-            {"urlTemplate", "https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}"},
-            {"thumbnailUrl", "https://webst01.is.autonavi.com/appmaptile?style=6&x=843&y=388&z=10"},
-            {"needsApiKey", false}
+            {"urlTemplate", "https://webst01.is.autonavi.com/appmaptile?style=6&x={x}&y={y}&z={z}&key={apiKey}&jscode={securityCode}"},
+            {"thumbnailUrl", "https://webst01.is.autonavi.com/appmaptile?style=6&x=843&y=388&z=10&key={apiKey}&jscode={securityCode}"},
+            {"needsApiKey", true}
         },
         QVariantMap{
             {"name", tr("Google 矢量")},
@@ -138,9 +135,36 @@ void MapSettings::load()
     SettingsManager* settings = SettingsManager::instance();
     m_currentProviderIndex = settings->getValue("map", "providerIndex", 0).toInt();
     m_customStyleUrl = settings->getValue("map", "customStyleUrl", "").toString();
-    
-    // 给定默认 MapTiler Key
-    m_apiKey = settings->getValue("map", "apiKey", "pIYKyqRw5KwCNhksntqa").toString();
+
+    QVariantMap defaultSourceKeys;
+    defaultSourceKeys.insert("MapTiler", "pIYKyqRw5KwCNhksntqa");
+    defaultSourceKeys.insert("Bing", "");
+    defaultSourceKeys.insert("Google", "");
+    defaultSourceKeys.insert("高德", "");
+
+    QVariantMap defaultSourceSecrets;
+    defaultSourceSecrets.insert("高德", "");
+
+    QVariantMap defaultSourceVisibility;
+    defaultSourceVisibility.insert("MapTiler", true);
+    defaultSourceVisibility.insert("Bing", true);
+    defaultSourceVisibility.insert("Google", true);
+    defaultSourceVisibility.insert("高德", true);
+
+    m_sourceKeys = settings->getValue("map", "sourceKeys", defaultSourceKeys).toMap();
+    m_sourceSecrets = settings->getValue("map", "sourceSecrets", defaultSourceSecrets).toMap();
+    m_sourceVisibility = settings->getValue("map", "sourceVisibility", defaultSourceVisibility).toMap();
+
+    // 兼容旧版 apiKey 字段
+    const QString legacyApiKey = settings->getValue("map", "apiKey", "").toString();
+    if (m_sourceKeys.value("MapTiler").toString().isEmpty()) {
+        m_sourceKeys.insert("MapTiler", legacyApiKey.isEmpty() ? "pIYKyqRw5KwCNhksntqa" : legacyApiKey);
+    }
+    if (!m_sourceSecrets.contains("高德")) {
+        m_sourceSecrets.insert("高德", "");
+    }
+
+    m_apiKey = m_sourceKeys.value("MapTiler").toString();
     
     if (m_currentProviderIndex < 0 || m_currentProviderIndex >= m_providers.size()) {
         m_currentProviderIndex = 0;
@@ -166,7 +190,10 @@ void MapSettings::save()
     SettingsManager* settings = SettingsManager::instance();
     settings->setValue("map", "providerIndex", m_currentProviderIndex);
     settings->setValue("map", "customStyleUrl", m_customStyleUrl);
-    settings->setValue("map", "apiKey", m_apiKey);
+    settings->setValue("map", "apiKey", m_sourceKeys.value("MapTiler").toString());
+    settings->setValue("map", "sourceKeys", m_sourceKeys);
+    settings->setValue("map", "sourceSecrets", m_sourceSecrets);
+    settings->setValue("map", "sourceVisibility", m_sourceVisibility);
     settings->setValue("map", "styleUrl", m_styleUrl);
     
     qDebug() << "[MapSettings] Configuration saved";
@@ -176,13 +203,25 @@ void MapSettings::reset()
 {
     m_currentProviderIndex = 0;
     m_customStyleUrl.clear();
-    m_apiKey = "pIYKyqRw5KwCNhksntqa";
+    m_sourceKeys.insert("MapTiler", "pIYKyqRw5KwCNhksntqa");
+    m_sourceKeys.insert("Bing", "");
+    m_sourceKeys.insert("Google", "");
+    m_sourceKeys.insert("高德", "");
+    m_sourceSecrets.insert("高德", "");
+
+    m_sourceVisibility.insert("MapTiler", true);
+    m_sourceVisibility.insert("Bing", true);
+    m_sourceVisibility.insert("Google", true);
+    m_sourceVisibility.insert("高德", true);
+
+    m_apiKey = m_sourceKeys.value("MapTiler").toString();
     updateStyleUrl();
     save();
     
     emit currentProviderIndexChanged();
     emit customStyleUrlChanged();
     emit apiKeyChanged();
+    emit sourceConfigChanged();
     emit settingsChanged();
 }
 
@@ -218,14 +257,14 @@ QString MapSettings::apiKey() const { return m_apiKey; }
 
 void MapSettings::setApiKey(const QString &key)
 {
-    if (m_apiKey != key) {
-        m_apiKey = key;
-        updateStyleUrl();
-        save();
-        emit apiKeyChanged();
-        emit settingsChanged();
-    }
+    setSourceKey("MapTiler", key);
 }
+
+QVariantMap MapSettings::sourceKeys() const { return m_sourceKeys; }
+
+QVariantMap MapSettings::sourceVisibility() const { return m_sourceVisibility; }
+
+QVariantMap MapSettings::sourceSecrets() const { return m_sourceSecrets; }
 
 QString MapSettings::getProviderStyleUrl(int index) const
 {
@@ -246,10 +285,87 @@ QString MapSettings::getThumbnailUrl(int index) const
     QVariantMap provider = m_providers[index].toMap();
     QString url = provider.value("thumbnailUrl").toString();
     if (provider.value("needsApiKey").toBool()) {
-        QString apiKey = m_apiKey.isEmpty() ? "pIYKyqRw5KwCNhksntqa" : m_apiKey;
+        const QString category = provider.value("category").toString();
+        QString apiKey = keyForCategory(category);
+        QString secret = secretForCategory(category);
         url.replace("{apiKey}", apiKey);
+        url.replace("{securityCode}", secret);
     }
     return url;
+}
+
+QString MapSettings::getSourceKey(const QString &category) const
+{
+    return m_sourceKeys.value(category).toString();
+}
+
+void MapSettings::setSourceKey(const QString &category, const QString &key)
+{
+    const QString oldValue = m_sourceKeys.value(category).toString();
+    if (oldValue == key) {
+        return;
+    }
+
+    m_sourceKeys.insert(category, key);
+    m_apiKey = m_sourceKeys.value("MapTiler").toString();
+
+    updateStyleUrl();
+    save();
+
+    emit apiKeyChanged();
+    emit sourceConfigChanged();
+    emit settingsChanged();
+}
+
+QString MapSettings::getSourceSecret(const QString &category) const
+{
+    return m_sourceSecrets.value(category).toString();
+}
+
+void MapSettings::setSourceSecret(const QString &category, const QString &secret)
+{
+    const QString oldValue = m_sourceSecrets.value(category).toString();
+    if (oldValue == secret) {
+        return;
+    }
+
+    m_sourceSecrets.insert(category, secret);
+
+    updateStyleUrl();
+    save();
+
+    emit sourceConfigChanged();
+    emit settingsChanged();
+}
+
+bool MapSettings::isCategoryVisible(const QString &category) const
+{
+    return m_sourceVisibility.value(category, true).toBool();
+}
+
+void MapSettings::setCategoryVisible(const QString &category, bool visible)
+{
+    const bool oldValue = m_sourceVisibility.value(category, true).toBool();
+    if (oldValue == visible) {
+        return;
+    }
+
+    m_sourceVisibility.insert(category, visible);
+
+    // 若当前类别被隐藏，则回到默认底图
+    if (!visible && m_currentProviderIndex >= 0 && m_currentProviderIndex < m_providers.size()) {
+        const QVariantMap provider = m_providers[m_currentProviderIndex].toMap();
+        if (provider.value("category").toString() == category) {
+            m_currentProviderIndex = 0;
+            emit currentProviderIndexChanged();
+        }
+    }
+
+    updateStyleUrl();
+    save();
+
+    emit sourceConfigChanged();
+    emit settingsChanged();
 }
 
 void MapSettings::updateStyleUrl()
@@ -264,8 +380,10 @@ void MapSettings::updateStyleUrl()
     } else {
         QVariantMap provider = m_providers[m_currentProviderIndex].toMap();
         QString type = provider.value("type").toString();
+        QString category = provider.value("category").toString();
         bool needsApiKey = provider.value("needsApiKey").toBool();
-        QString apiKey = m_apiKey.isEmpty() ? "pIYKyqRw5KwCNhksntqa" : m_apiKey;
+        QString apiKey = keyForCategory(category);
+        QString secret = secretForCategory(category);
 
         if (type == "vector") {
             QString templateUrl = provider.value("styleUrl").toString();
@@ -274,7 +392,10 @@ void MapSettings::updateStyleUrl()
             // == 核心逻辑 ==
             // 针对高德/Google/Bing，将 XYZ 瓦片服务包裹为 MapLibre 标准 style.json ！
             QString templateUrl = provider.value("urlTemplate").toString();
-            if (needsApiKey) templateUrl.replace("{apiKey}", apiKey);
+            if (needsApiKey) {
+                templateUrl.replace("{apiKey}", apiKey);
+                templateUrl.replace("{securityCode}", secret);
+            }
 
             QJsonObject root;
             root["version"] = 8;
@@ -313,14 +434,7 @@ void MapSettings::updateStyleUrl()
             root["layers"] = layers;
 
             QJsonDocument doc(root);
-            // 写入本地临时文件作为 file:/// 的形式让 MapLibre 读取
-            QString tempPath = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/yefs_raster_style.json";
-            QFile file(tempPath);
-            if (file.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-                file.write(doc.toJson());
-                file.close();
-                newUrl = QUrl::fromLocalFile(tempPath).toString(); // 生成标准的 file:/// C:/...
-            }
+            newUrl = QString::fromUtf8(doc.toJson(QJsonDocument::Compact));
         }
     }
     
@@ -329,6 +443,22 @@ void MapSettings::updateStyleUrl()
         qDebug() << "[MapSettings] BaseMap Style URL updated:" << m_styleUrl;
         emit styleUrlChanged();
     }
+}
+
+QString MapSettings::keyForCategory(const QString &category) const
+{
+    QString key = m_sourceKeys.value(category).toString();
+    if (category == "MapTiler") {
+        if (key.isEmpty()) {
+            key = "pIYKyqRw5KwCNhksntqa";
+        }
+    }
+    return key;
+}
+
+QString MapSettings::secretForCategory(const QString &category) const
+{
+    return m_sourceSecrets.value(category).toString();
 }
 
 } // namespace YEFS

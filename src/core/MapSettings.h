@@ -9,6 +9,7 @@
 #include <QObject>
 #include <QQmlEngine>
 #include <QVariantList>
+#include <QVariantMap>
 
 namespace YEFS {
 
@@ -39,6 +40,15 @@ class MapSettings : public QObject
     // 自定义API Key
     Q_PROPERTY(QString apiKey READ apiKey WRITE setApiKey NOTIFY apiKeyChanged)
 
+    // 图源 Key 配置（按类别）
+    Q_PROPERTY(QVariantMap sourceKeys READ sourceKeys NOTIFY sourceConfigChanged)
+
+    // 图源显示配置（按类别）
+    Q_PROPERTY(QVariantMap sourceVisibility READ sourceVisibility NOTIFY sourceConfigChanged)
+
+    // 图源安全密钥配置（按类别）
+    Q_PROPERTY(QVariantMap sourceSecrets READ sourceSecrets NOTIFY sourceConfigChanged)
+
 public:
     static MapSettings* create(QQmlEngine *qmlEngine, QJSEngine *jsEngine);
     static MapSettings* instance();
@@ -59,6 +69,10 @@ public:
     QString apiKey() const;
     void setApiKey(const QString &key);
 
+    QVariantMap sourceKeys() const;
+    QVariantMap sourceVisibility() const;
+    QVariantMap sourceSecrets() const;
+
     // 获取指定提供商的样式URL模板
     Q_INVOKABLE QString getProviderStyleUrl(int index) const;
     
@@ -67,6 +81,18 @@ public:
     
     // 获取缩略图URL
     Q_INVOKABLE QString getThumbnailUrl(int index) const;
+
+    // 获取/设置图源 Key（按类别，例如 MapTiler/Bing）
+    Q_INVOKABLE QString getSourceKey(const QString &category) const;
+    Q_INVOKABLE void setSourceKey(const QString &category, const QString &key);
+
+    // 获取/设置图源是否显示
+    Q_INVOKABLE bool isCategoryVisible(const QString &category) const;
+    Q_INVOKABLE void setCategoryVisible(const QString &category, bool visible);
+
+    // 获取/设置图源安全密钥（例如高德 securityJsCode）
+    Q_INVOKABLE QString getSourceSecret(const QString &category) const;
+    Q_INVOKABLE void setSourceSecret(const QString &category, const QString &secret);
     
     // 保存配置
     Q_INVOKABLE void save();
@@ -79,11 +105,14 @@ signals:
     void styleUrlChanged();
     void customStyleUrlChanged();
     void apiKeyChanged();
+    void sourceConfigChanged();
     void settingsChanged();
 
 private:
     void load();
     void updateStyleUrl();
+    QString keyForCategory(const QString &category) const;
+    QString secretForCategory(const QString &category) const;
 
     static MapSettings* s_instance;
 
@@ -91,6 +120,9 @@ private:
     QString m_styleUrl;
     QString m_customStyleUrl;
     QString m_apiKey;
+    QVariantMap m_sourceKeys;
+    QVariantMap m_sourceSecrets;
+    QVariantMap m_sourceVisibility;
     QVariantList m_providers;
 };
 
