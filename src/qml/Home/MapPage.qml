@@ -44,6 +44,7 @@ Rectangle {
 
         // 必须先 stop 再赋值，否则 PropertyAnimation 下一帧会覆盖赋值，导致 opacity 出现异常
         overlayHideAnim.stop()
+        firstFrameSettleTimer.stop()  // 取消上一次尚未触发的淡出延迟
         styleTransitionOverlay.opacity = 1.0  // 立即不透明，不走任何动画
         root.lastAppliedStyle = styleValue
         root.styleSwitching = true
@@ -131,6 +132,19 @@ Rectangle {
         }
     }
 
+    // 首帧稳定延迟：firstFrameReady 触发后等 ~50ms（≈3帧@60fps）再开始淡出
+    // 给 MapLibre 渲染管线额外时间把像素稳定写入内部 FBO，
+    // 避免 GPU VRAM 未初始化内存（粉色/洋红）在首帧透出遮罩
+    Timer {
+        id: firstFrameSettleTimer
+        interval: 50
+        repeat: false
+        onTriggered: {
+            overlayHideAnim.stop()
+            overlayHideAnim.start()
+        }
+    }
+
     // 地图底色垫层：与加载遮罩同色，保证遮罩淡出过程中透出来的始终是蓝色
     // 而非 FBO 重清时可能出现的红色/其他颜色
     Rectangle {
@@ -164,9 +178,9 @@ Rectangle {
                 root.styleSwitching = false
                 root.fallbackTimeout = false
                 mapLoadTimeoutTimer.stop()
-                // 使用 start() 而非 restart()，避免重复触发时 from 值异常
-                overlayHideAnim.stop()
-                overlayHideAnim.start()
+                // 延迟 ~50ms（≈3帧@60fps）再淡出：给 MapLibre 渲染管线额外时间把
+                // 像素稳定写入内部 FBO，避免首帧 GPU 内存残留（粉色/VRAM未初始化）透出
+                firstFrameSettleTimer.restart()
             }
         }
         // ---------- GeoJSON 图层桥接函数 ----------
