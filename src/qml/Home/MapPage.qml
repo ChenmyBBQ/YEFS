@@ -132,9 +132,9 @@ Rectangle {
         }
     }
 
-    // 首帧稳定延迟（防抖）：firstFrameReady 触发后等待 100ms 内不再有新渲染完成信号
-    // 再开始遮罩淡出；快速国内底图多批次瓦片加载时会持续收到信号，每次重置计时，
-    // 确保 MapLibre FBO 像素真正稳定后才撤遮罩，消除批次间 FBO 重清导致的粉色闪烁。
+    // 首帧稳定延迟：firstFrameReady 触发后等待 100ms 让 GPU 渲染管线稳定，
+    // 再开始遮罩淡出。底层 C++ 已确保每次样式变化只发出一次 firstFrameReady，
+    // 此处作为额外的 GPU flush 等待窗口。
     Timer {
         id: firstFrameSettleTimer
         interval: 100
@@ -178,13 +178,7 @@ Rectangle {
                 root.styleSwitching = false
                 root.fallbackTimeout = false
                 mapLoadTimeoutTimer.stop()
-                // 防抖等待：快速国内底图会多批次触发 firstFrameReady（每批瓦片到位
-                // 都触发一次 DidFinishRenderingMapFullyRendered → 门控重新 arm）。
-                // 每次信号都重置计时器，直到 100ms 内不再有新信号，才开始淡出，
-                // 确保 MapLibre FBO 内容真正稳定后再撤遮罩。
-                firstFrameSettleTimer.restart()
-            } else if (firstFrameSettleTimer.running) {
-                // 仍在稳定等待窗口内，再次收到渲染完成信号，延长等待
+                // 等待 100ms 让 GPU 渲染管线稳定后再开始淡出遮罩
                 firstFrameSettleTimer.restart()
             }
         }
