@@ -16,10 +16,10 @@ Rectangle {
     property string mouseUtmText: "--"
     property string mouseMgrsText: "--"
     property string lastAppliedStyle: ""
+    property bool styleSwitching: true
+    property bool fallbackTimeout: false
 
-    Component.onCompleted: {
-        console.log('[MapPage] Component loaded, airspacePanelVisible:', airspacePanelVisible)
-    }
+    Component.onCompleted: { }
 
     // 获取配置的样式URL
     function getMapStyleUrl() {
@@ -42,7 +42,10 @@ Rectangle {
             return
 
         root.lastAppliedStyle = styleValue
-        console.log("[MapPage] Applying style:", styleValue)
+        root.styleSwitching = true
+        root.fallbackTimeout = false
+        mapLoadTimeoutTimer.restart()
+        styleTransitionOverlay.opacity = 1.0  // 立即不透明，不走任何动画
         mapView.style = styleValue
     }
 
@@ -76,7 +79,6 @@ Rectangle {
         target: SettingsManager
         function onSettingsChanged(category, key) {
             if (category === "map" && key === "styleUrl") {
-                console.log("[MapPage] Style changed:", root.getMapStyleUrl());
                 root.applyConfiguredStyle();
             }
         }
@@ -108,6 +110,18 @@ Rectangle {
         }
     }
 
+    Timer {
+        id: mapLoadTimeoutTimer
+        interval: 30000
+        repeat: false
+        onTriggered: {
+            root.styleSwitching = false
+            root.fallbackTimeout = true
+            // 超时后也不强制隐藏遮罩，继续保持可见并更新文字提示
+            // 等 firstFrameReady 到来，再由 overlayHideAnim 淡出
+        }
+    }
+
     // 地图视图
     MapLibre {
         id: mapView
@@ -124,6 +138,18 @@ Rectangle {
             root.applyConfiguredStyle()
         }
 
+        // ----------- 精准撤遮罩：在 Qt SceneGraph 已持有有效纹理后触发 -----------
+        // onFirstFrameReady 由 C++ 渲染线程确认纹理写入后发到主线程，时序上晚于
+        // onMapFullyLoaded，从根本上消除"mapFullyLoaded → 250ms 延迟 → 纹理写入"
+        // 之间遮罩透出未初始化像素导致的红屏闪烁问题
+        onFirstFrameReady: {
+            if (root.styleSwitching || root.fallbackTimeout) {
+                root.styleSwitching = false
+                root.fallbackTimeout = false
+                mapLoadTimeoutTimer.stop()
+                overlayHideAnim.restart()
+            }
+        }
         // ---------- GeoJSON 图层桥接函数 ----------
         function addGeoJSONLayer(layerId, geoJson, style) {
             var map = mapView.map
@@ -268,12 +294,40 @@ Rectangle {
         }
     }
 
+    Rectangle {
+        id: styleTransitionOverlay
+        anchors.fill: mapView
+        z: 1
+        visible: opacity > 0.01
+        color: HusTheme.Primary.colorBgContainer
+        opacity: 1.0  // 由 applyConfiguredStyle() 直接赋值 1.0，由下方动画归零
+
+        // 只在「隐藏」时执行淡出动画；出现时由 JS 直接设 opacity=1.0 保证瞬间不透明
+        PropertyAnimation {
+            id: overlayHideAnim
+            target: styleTransitionOverlay
+            property: "opacity"
+            to: 0.0
+            duration: 260
+            easing.type: Easing.InOutCubic
+        }
+
+        HusText {
+            anchors.centerIn: parent
+            text: root.fallbackTimeout ? qsTr("加载超时，仍在尝试…") : qsTr("底图加载中…")
+            color: HusTheme.Primary.colorTextSecondary
+            font.pixelSize: 14
+            visible: root.styleSwitching || root.fallbackTimeout
+        }
+    }
+
     // 地图控制面板
     Rectangle {
         id: controlPanel
         anchors.top: parent.top
         anchors.right: parent.right
         anchors.margins: 15
+        z: 2
         width: 44
         height: controlColumn.height + 16
         radius: HusTheme.Primary.radiusPrimary
@@ -376,6 +430,7 @@ Rectangle {
         anchors.topMargin: 10
         anchors.right: parent.right
         anchors.margins: 15
+        z: 2
         width: 44
         height: styleColumn.height + 16
         radius: HusTheme.Primary.radiusPrimary
@@ -516,6 +571,7 @@ Rectangle {
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.margins: 15
+        z: 2
         visible: false
         active: visible
         sourceComponent: Component {
@@ -541,6 +597,7 @@ Rectangle {
         anchors.bottom: parent.bottom
         anchors.left: parent.left
         anchors.margins: 15
+        z: 2
         visible: false
         active: visible
         sourceComponent: Component {

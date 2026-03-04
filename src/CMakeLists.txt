@@ -114,6 +114,7 @@ qt_add_resources(${PROJECT_NAME} "images"
     resources/images/YEFS.ico
         resources/images/switch_effect1.jpg
         resources/images/switch_effect2.jpg
+        resources/images/default_img.jpg
 )
 
 qt_add_resources(${PROJECT_NAME} "shape_icons"
