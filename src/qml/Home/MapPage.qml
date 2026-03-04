@@ -42,11 +42,13 @@ Rectangle {
         if (!styleValue || styleValue.length === 0)
             return
 
+        // 必须先 stop 再赋值，否则 PropertyAnimation 下一帧会覆盖赋值，导致 opacity 出现异常
+        overlayHideAnim.stop()
+        styleTransitionOverlay.opacity = 1.0  // 立即不透明，不走任何动画
         root.lastAppliedStyle = styleValue
         root.styleSwitching = true
         root.fallbackTimeout = false
         mapLoadTimeoutTimer.restart()
-        styleTransitionOverlay.opacity = 1.0  // 立即不透明，不走任何动画
         mapView.style = styleValue
     }
 
@@ -80,6 +82,9 @@ Rectangle {
         target: SettingsManager
         function onSettingsChanged(category, key) {
             if (category === "map" && key === "styleUrl") {
+                // 立即遮住地图，防止暴露窗口
+                overlayHideAnim.stop()
+                styleTransitionOverlay.opacity = 1.0
                 root.applyConfiguredStyle();
             }
         }
@@ -93,6 +98,9 @@ Rectangle {
         onTriggered: {
             let currentStyle = root.getMapStyleUrl()
             if (currentStyle && currentStyle.length > 0 && currentStyle !== root.lastAppliedStyle) {
+                // 立即遮住地图（停止淡出动画），防止轮询间隔内出现暴露窗口
+                overlayHideAnim.stop()
+                styleTransitionOverlay.opacity = 1.0
                 root.applyConfiguredStyle()
             }
         }
@@ -156,7 +164,9 @@ Rectangle {
                 root.styleSwitching = false
                 root.fallbackTimeout = false
                 mapLoadTimeoutTimer.stop()
-                overlayHideAnim.restart()
+                // 使用 start() 而非 restart()，避免重复触发时 from 值异常
+                overlayHideAnim.stop()
+                overlayHideAnim.start()
             }
         }
         // ---------- GeoJSON 图层桥接函数 ----------
@@ -321,6 +331,10 @@ Rectangle {
             to: 0.0
             duration: 500
             easing.type: Easing.OutCubic
+            onStarted: console.log("[MapPage]", new Date().toLocaleTimeString(Qt.locale(), "hh:mm:ss.zzz"),
+                "overlayHideAnim STARTED, begin opacity:", styleTransitionOverlay.opacity)
+            onStopped: console.log("[MapPage]", new Date().toLocaleTimeString(Qt.locale(), "hh:mm:ss.zzz"),
+                "overlayHideAnim STOPPED, final opacity:", styleTransitionOverlay.opacity)
         }
 
         // 居中加载指示器区域
