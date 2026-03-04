@@ -42,6 +42,9 @@ Rectangle {
         if (!styleValue || styleValue.length === 0)
             return
 
+        console.log("[MapPage]", new Date().toLocaleTimeString(Qt.locale(), "hh:mm:ss.zzz"),
+            "applyConfiguredStyle overlayOpacity=" + styleTransitionOverlay.opacity.toFixed(4),
+            "styleSwitching=" + root.styleSwitching)
         // 必须先 stop 再赋值，否则 PropertyAnimation 下一帧会覆盖赋值，导致 opacity 出现异常
         overlayHideAnim.stop()
         firstFrameSettleTimer.stop()  // 取消上一次尚未触发的淡出延迟
@@ -140,6 +143,9 @@ Rectangle {
         interval: 100
         repeat: false
         onTriggered: {
+            console.log("[MapPage]", new Date().toLocaleTimeString(Qt.locale(), "hh:mm:ss.zzz"),
+                "firstFrameSettleTimer fired -> starting overlayHideAnim",
+                "overlayOpacity=" + styleTransitionOverlay.opacity.toFixed(4))
             overlayHideAnim.stop()
             overlayHideAnim.start()
         }
@@ -174,6 +180,10 @@ Rectangle {
         // onMapFullyLoaded，从根本上消除"mapFullyLoaded → 250ms 延迟 → 纹理写入"
         // 之间遮罩透出未初始化像素导致的红屏闪烁问题
         onFirstFrameReady: {
+            console.log("[MapPage]", new Date().toLocaleTimeString(Qt.locale(), "hh:mm:ss.zzz"),
+                "onFirstFrameReady styleSwitching=" + root.styleSwitching,
+                "fallback=" + root.fallbackTimeout,
+                "overlayOpacity=" + styleTransitionOverlay.opacity.toFixed(4))
             if (root.styleSwitching || root.fallbackTimeout) {
                 root.styleSwitching = false
                 root.fallbackTimeout = false
