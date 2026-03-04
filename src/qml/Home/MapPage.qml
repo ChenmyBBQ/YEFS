@@ -8,7 +8,8 @@ import "../Components"
 
 Rectangle {
     id: root
-    color: HusTheme.Primary.colorBgContainer
+    // 与加载遮罩同色，保证 QML 场景图第一帧前窗口背景即为蓝色，消除启动时粉色闪烁
+    color: "#b8d9f0"
 
     property real mouseLatitude: NaN
     property real mouseLongitude: NaN
@@ -120,6 +121,14 @@ Rectangle {
             // 超时后也不强制隐藏遮罩，继续保持可见并更新文字提示
             // 等 firstFrameReady 到来，再由 overlayHideAnim 淡出
         }
+    }
+
+    // 地图底色垫层：与加载遮罩同色，保证遮罩淡出过程中透出来的始终是蓝色
+    // 而非 FBO 重清时可能出现的红色/其他颜色
+    Rectangle {
+        anchors.fill: parent
+        color: "#b8d9f0"
+        z: 0
     }
 
     // 地图视图
@@ -299,25 +308,41 @@ Rectangle {
         anchors.fill: mapView
         z: 1
         visible: opacity > 0.01
-        color: HusTheme.Primary.colorBgContainer
+        // 浅蓝色背景，寓意大海——陆地（底图）正在加载中
+        color: "#b8d9f0"
         opacity: 1.0  // 由 applyConfiguredStyle() 直接赋值 1.0，由下方动画归零
 
         // 只在「隐藏」时执行淡出动画；出现时由 JS 直接设 opacity=1.0 保证瞬间不透明
+        // 先快后慢：地图先从蓝色背景下"透出"，再慢慢完全清晰，过渡更自然
         PropertyAnimation {
             id: overlayHideAnim
             target: styleTransitionOverlay
             property: "opacity"
             to: 0.0
-            duration: 260
-            easing.type: Easing.InOutCubic
+            duration: 500
+            easing.type: Easing.OutCubic
         }
 
-        HusText {
+        // 居中加载指示器区域
+        Column {
             anchors.centerIn: parent
-            text: root.fallbackTimeout ? qsTr("加载超时，仍在尝试…") : qsTr("底图加载中…")
-            color: HusTheme.Primary.colorTextSecondary
-            font.pixelSize: 14
+            spacing: 12
             visible: root.styleSwitching || root.fallbackTimeout
+
+            HusSpin {
+                anchors.horizontalCenter: parent.horizontalCenter
+                spinning: true
+                sizeHint: "large"
+                spinSize: 36
+                indicatorItemCount: 8
+            }
+
+            HusText {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: root.fallbackTimeout ? qsTr("加载超时，仍在尝试…") : qsTr("底图加载中…")
+                color: HusTheme.Primary.colorTextSecondary
+                font.pixelSize: 13
+            }
         }
     }
 
