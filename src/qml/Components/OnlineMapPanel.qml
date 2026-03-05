@@ -166,57 +166,82 @@ Rectangle {
                 Column {
                     id: contentColumn
                     width: mapFlickable.width
-                    spacing: 14
+                    spacing: 12
 
                     Repeater {
                         model: root.categoryDefs
 
-                        delegate: Column {
+                        delegate: Rectangle {
                             required property var modelData
                             property var providerIndices: root.providerIndicesByCategory(modelData.key)
 
                             width: parent.width
-                            spacing: 8
+                            radius: HusTheme.Primary.radiusPrimary
+                            color: HusThemeFunctions.alpha(HusTheme.Primary.colorBgBase, 0.52)
+                            border.width: 1
+                            border.color: HusThemeFunctions.alpha(HusTheme.Primary.colorPrimary, 0.42)
+                            height: groupContent.implicitHeight + 18
                             visible: providerIndices.length > 0
 
-                            HusText {
-                                text: modelData.label
-                                font.pixelSize: 14
-                                font.weight: Font.DemiBold
-                            }
+                            Column {
+                                id: groupContent
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.top: parent.top
+                                anchors.margins: 9
+                                spacing: 8
 
-                            Flow {
-                                id: cardFlow
-                                width: parent.width
-                                spacing: 10
+                                Rectangle {
+                                    width: parent.width
+                                    height: 26
+                                    radius: HusTheme.Primary.radiusPrimary
+                                    color: HusThemeFunctions.alpha(HusTheme.Primary.colorPrimary, 0.16)
+                                    border.width: 1
+                                    border.color: HusThemeFunctions.alpha(HusTheme.Primary.colorPrimary, 0.48)
 
-                                Repeater {
-                                    model: parent.parent.providerIndices
+                                    HusText {
+                                        anchors.left: parent.left
+                                        anchors.leftMargin: 8
+                                        anchors.verticalCenter: parent.verticalCenter
+                                        text: modelData.label
+                                        font.pixelSize: 14
+                                        font.weight: Font.DemiBold
+                                        color: HusTheme.Primary.colorTextBase
+                                    }
+                                }
 
-                                    delegate: Rectangle {
-                                        required property var modelData
-                                        property int providerIndex: modelData
+                                Flow {
+                                    id: cardFlow
+                                    width: parent.width
+                                    spacing: 10
 
-                                        width: (cardFlow.width - 10) / 2
-                                        height: 124
-                                        radius: HusTheme.Primary.radiusPrimary
-                                        clip: true
+                                    Repeater {
+                                        model: parent.parent.parent.providerIndices
 
-                                        color: providerIndex === MapSettings.currentProviderIndex
-                                            ? HusThemeFunctions.alpha(HusTheme.Primary.colorPrimary, 0.18)
-                                            : HusThemeFunctions.alpha(HusTheme.Primary.colorBgBase, 0.5)
-                                        border.width: providerIndex === MapSettings.currentProviderIndex ? 2 : 1
-                                        border.color: providerIndex === MapSettings.currentProviderIndex
-                                            ? HusTheme.Primary.colorPrimary
-                                            : HusTheme.Primary.colorBorder
+                                        delegate: Rectangle {
+                                            required property var modelData
+                                            property int providerIndex: modelData
 
-                                        Image {
-                                            anchors.left: parent.left
-                                            anchors.right: parent.right
-                                            anchors.top: parent.top
-                                            height: 94
-                                            fillMode: Image.PreserveAspectCrop
-                                            source: MapSettings.getThumbnailUrl(providerIndex)
+                                            width: (cardFlow.width - 10) / 2
+                                            height: 124
+                                            radius: HusTheme.Primary.radiusPrimary
+                                            clip: true
+
+                                            color: providerIndex === MapSettings.currentProviderIndex
+                                                ? HusThemeFunctions.alpha(HusTheme.Primary.colorPrimary, 0.22)
+                                                : HusThemeFunctions.alpha(HusTheme.Primary.colorBgContainer, 0.88)
+                                            border.width: providerIndex === MapSettings.currentProviderIndex ? 2 : 1
+                                            border.color: providerIndex === MapSettings.currentProviderIndex
+                                                ? HusThemeFunctions.alpha(HusTheme.Primary.colorPrimary, 0.52)
+                                                : HusThemeFunctions.alpha(HusTheme.Primary.colorPrimary, 0.38)
+
+                                            Image {
+                                                anchors.left: parent.left
+                                                anchors.right: parent.right
+                                                anchors.top: parent.top
+                                                height: 94
+                                                fillMode: Image.PreserveAspectCrop
+                                                source: MapSettings.getThumbnailUrl(providerIndex)
 
                                             Rectangle {
                                                 anchors.fill: parent
@@ -231,14 +256,14 @@ Rectangle {
                                             }
                                         }
 
-                                        Rectangle {
-                                            anchors.left: parent.left
-                                            anchors.right: parent.right
-                                            anchors.bottom: parent.bottom
-                                            height: 30
-                                            color: providerIndex === MapSettings.currentProviderIndex
-                                                ? HusTheme.Primary.colorPrimary
-                                                : HusTheme.Primary.colorBgContainer
+                                            Rectangle {
+                                                anchors.left: parent.left
+                                                anchors.right: parent.right
+                                                anchors.bottom: parent.bottom
+                                                height: 30
+                                                color: providerIndex === MapSettings.currentProviderIndex
+                                                    ? HusThemeFunctions.alpha(HusTheme.Primary.colorPrimary, 0.52)
+                                                    : HusThemeFunctions.alpha(HusTheme.Primary.colorBgContainer, 0.92)
 
                                             HusText {
                                                 anchors.centerIn: parent
@@ -249,23 +274,24 @@ Rectangle {
                                             }
                                         }
 
-                                        MouseArea {
-                                            anchors.fill: parent
-                                            cursorShape: Qt.PointingHandCursor
-                                            onClicked: {
-                                                if (!root.canSwitchProvider(providerIndex)) {
-                                                    var provider = MapSettings.providers[providerIndex]
-                                                    var category = provider ? provider.category : ""
-                                                    if (category === "Bing")
-                                                        toast.error(qsTr("Bing 地图需要有效 Key，请先在设置页输入。"))
-                                                    else if (category === "高德")
-                                                        toast.error(qsTr("高德地图需要有效 Key 和安全密钥，请先在设置页输入。"))
-                                                    else
-                                                        toast.error(qsTr("当前底图不可用"))
-                                                    return
+                                            MouseArea {
+                                                anchors.fill: parent
+                                                cursorShape: Qt.PointingHandCursor
+                                                onClicked: {
+                                                    if (!root.canSwitchProvider(providerIndex)) {
+                                                        var provider = MapSettings.providers[providerIndex]
+                                                        var category = provider ? provider.category : ""
+                                                        if (category === "Bing")
+                                                            toast.error(qsTr("Bing 地图需要有效 Key，请先在设置页输入。"))
+                                                        else if (category === "高德")
+                                                            toast.error(qsTr("高德地图需要有效 Key 和安全密钥，请先在设置页输入。"))
+                                                        else
+                                                            toast.error(qsTr("当前底图不可用"))
+                                                        return
+                                                    }
+                                                    MapSettings.currentProviderIndex = providerIndex
+                                                    toast.success(qsTr("已切换到底图：") + MapSettings.getProviderName(providerIndex))
                                                 }
-                                                MapSettings.currentProviderIndex = providerIndex
-                                                toast.success(qsTr("已切换到底图：") + MapSettings.getProviderName(providerIndex))
                                             }
                                         }
                                     }
@@ -333,18 +359,19 @@ Rectangle {
 
             Column {
                 anchors.fill: parent
-                anchors.margins: 14
-                spacing: 10
+                anchors.margins: 12
+                spacing: 8
 
-                Row {
+                Item {
                     width: parent.width
                     height: 34
 
                     HusIconButton {
-                        width: 30
-                        height: 30
+                        width: 24
+                        height: 24
                         iconSource: HusIcon.LeftOutlined
                         type: HusButton.Type_Default
+                        anchors.left: parent.left
                         anchors.verticalCenter: parent.verticalCenter
                         onClicked: root.closeSettingsAndApply()
                     }
@@ -353,8 +380,7 @@ Rectangle {
                         text: qsTr("底图源设置")
                         font.pixelSize: 16
                         font.weight: Font.DemiBold
-                        anchors.verticalCenter: parent.verticalCenter
-                        x: 42
+                        anchors.centerIn: parent
                     }
                 }
 
@@ -371,8 +397,8 @@ Rectangle {
 
                     Column {
                         id: settingsColumn
-                        width: settingsFlick.width - 10
-                        spacing: 12
+                        width: settingsFlick.width - 6
+                        spacing: 10
 
                     Repeater {
                         model: root.categoryDefs
@@ -380,38 +406,43 @@ Rectangle {
                         delegate: Rectangle {
                             required property var modelData
                             width: parent.width
-                            height: modelData.supportsSecret ? 146 : (modelData.supportsKey ? 108 : 72)
+                            height: modelData.supportsSecret ? 132 : (modelData.supportsKey ? 98 : 64)
                             radius: HusTheme.Primary.radiusPrimary
                             color: HusThemeFunctions.alpha(HusTheme.Primary.colorBgBase, 0.55)
                             border.color: HusTheme.Primary.colorBorder
 
                             Column {
                                 anchors.fill: parent
-                                anchors.margins: 10
-                                spacing: 8
+                                anchors.margins: 8
+                                spacing: 6
 
-                                Row {
+                                Item {
                                     width: parent.width
-                                    spacing: 8
+                                    height: 24
 
                                     HusText {
                                         text: modelData.label
                                         font.pixelSize: 14
                                         font.weight: Font.DemiBold
+                                        anchors.left: parent.left
                                         anchors.verticalCenter: parent.verticalCenter
                                     }
 
-                                    Item { width: parent.width - 160; height: 1 }
-
-                                    HusText {
-                                        text: qsTr("显示")
+                                    Row {
+                                        spacing: 6
+                                        anchors.right: parent.right
                                         anchors.verticalCenter: parent.verticalCenter
-                                    }
 
-                                    HusSwitch {
-                                        checked: MapSettings.isCategoryVisible(modelData.key)
-                                        anchors.verticalCenter: parent.verticalCenter
-                                        onToggled: MapSettings.setCategoryVisible(modelData.key, checked)
+                                        HusText {
+                                            text: qsTr("显示")
+                                            anchors.verticalCenter: parent.verticalCenter
+                                        }
+
+                                        HusSwitch {
+                                            checked: MapSettings.isCategoryVisible(modelData.key)
+                                            anchors.verticalCenter: parent.verticalCenter
+                                            onToggled: MapSettings.setCategoryVisible(modelData.key, checked)
+                                        }
                                     }
                                 }
 

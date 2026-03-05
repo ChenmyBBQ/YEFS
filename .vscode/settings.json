@@ -17,5 +17,9 @@
         "G:/YEFS/build/src"
     ],
     "qt-qml.qmlls.customDocsPath": "F:/Qt/6.10.1/Docs",
-    "qt-qml.qmlls.useNoCMakeCalls": false
+    "qt-qml.qmlls.useNoCMakeCalls": false,
+    "chat.tools.terminal.autoApprove": {
+        "Tee-Object": true
+    },
+    "markdown.validate.enabled": false
 }
