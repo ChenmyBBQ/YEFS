@@ -8,6 +8,7 @@ import "../Components"
 
 Rectangle {
     id: root
+
     // 与加载遮罩同色，保证 QML 场景图第一帧前窗口背景即为蓝色，消除启动时粉色闪烁
     color: "#b8d9f0"
 
@@ -19,8 +20,15 @@ Rectangle {
     property string lastAppliedStyle: ""
     property bool styleSwitching: true
     property bool fallbackTimeout: false
+    property bool startupVisualReadyEmitted: false
 
-    Component.onCompleted: { }
+    function notifyStartupVisualReady(reason) {
+        if (startupVisualReadyEmitted)
+            return
+
+        startupVisualReadyEmitted = true
+        MessageBus.send("map/startup-visual-ready", { "reason": reason })
+    }
 
     // 获取配置的样式URL
     function getMapStyleUrl() {
@@ -42,9 +50,6 @@ Rectangle {
         if (!styleValue || styleValue.length === 0)
             return
 
-        console.log("[MapPage]", new Date().toLocaleTimeString(Qt.locale(), "hh:mm:ss.zzz"),
-            "applyConfiguredStyle overlayOpacity=" + styleTransitionOverlay.opacity.toFixed(4),
-            "styleSwitching=" + root.styleSwitching)
         // 必须先 stop 再赋值，否则 PropertyAnimation 下一帧会覆盖赋值，导致 opacity 出现异常
         overlayHideAnim.stop()
         firstFrameSettleTimer.stop()  // 取消上一次尚未触发的淡出延迟
@@ -143,9 +148,6 @@ Rectangle {
         interval: 100
         repeat: false
         onTriggered: {
-            console.log("[MapPage]", new Date().toLocaleTimeString(Qt.locale(), "hh:mm:ss.zzz"),
-                "firstFrameSettleTimer fired -> starting overlayHideAnim",
-                "overlayOpacity=" + styleTransitionOverlay.opacity.toFixed(4))
             overlayHideAnim.stop()
             overlayHideAnim.start()
         }
@@ -165,8 +167,9 @@ Rectangle {
         anchors.fill: parent
         focus: true
         
-        // 默认先给一个可用URL，栅格JSON样式在组件完成后由 applyConfiguredStyle() 分流加载
-        style: "https://demotiles.maplibre.org/style.json"
+        // 启动时直接使用当前配置样式，避免先加载 demo 样式再立刻切换到底图配置，
+        // 这会在 OpenGL 后端上额外触发一次纹理/样式切换，容易出现瞬时粉色帧。
+        style: root.getMapStyleUrl()
         zoomLevel: SettingsManager.getValue("map", "defaultZoom", 2)
         coordinate: [39.9042, 116.4074]
 
@@ -180,10 +183,6 @@ Rectangle {
         // onMapFullyLoaded，从根本上消除"mapFullyLoaded → 250ms 延迟 → 纹理写入"
         // 之间遮罩透出未初始化像素导致的红屏闪烁问题
         onFirstFrameReady: {
-            console.log("[MapPage]", new Date().toLocaleTimeString(Qt.locale(), "hh:mm:ss.zzz"),
-                "onFirstFrameReady styleSwitching=" + root.styleSwitching,
-                "fallback=" + root.fallbackTimeout,
-                "overlayOpacity=" + styleTransitionOverlay.opacity.toFixed(4))
             if (root.styleSwitching || root.fallbackTimeout) {
                 root.styleSwitching = false
                 root.fallbackTimeout = false
@@ -345,6 +344,11 @@ Rectangle {
         color: "#b8d9f0"
         opacity: 1.0  // 由 applyConfiguredStyle() 直接赋值 1.0，由下方动画归零
 
+        onVisibleChanged: {
+            if (!visible)
+                root.notifyStartupVisualReady("overlay.hidden")
+        }
+
         // 只在「隐藏」时执行淡出动画；出现时由 JS 直接设 opacity=1.0 保证瞬间不透明
         // 先快后慢：地图先从蓝色背景下"透出"，再慢慢完全清晰，过渡更自然
         PropertyAnimation {
@@ -354,10 +358,6 @@ Rectangle {
             to: 0.0
             duration: 500
             easing.type: Easing.OutCubic
-            onStarted: console.log("[MapPage]", new Date().toLocaleTimeString(Qt.locale(), "hh:mm:ss.zzz"),
-                "overlayHideAnim STARTED, begin opacity:", styleTransitionOverlay.opacity)
-            onStopped: console.log("[MapPage]", new Date().toLocaleTimeString(Qt.locale(), "hh:mm:ss.zzz"),
-                "overlayHideAnim STOPPED, final opacity:", styleTransitionOverlay.opacity)
         }
 
         // 居中加载指示器区域

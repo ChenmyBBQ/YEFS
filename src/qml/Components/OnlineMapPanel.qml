@@ -172,6 +172,7 @@ Rectangle {
                         model: root.categoryDefs
 
                         delegate: Rectangle {
+                            id: categoryDelegate
                             required property var modelData
                             property var providerIndices: root.providerIndicesByCategory(modelData.key)
 
@@ -216,7 +217,7 @@ Rectangle {
                                     spacing: 10
 
                                     Repeater {
-                                        model: parent.parent.parent.providerIndices
+                                        model: categoryDelegate.providerIndices
 
                                         delegate: Rectangle {
                                             required property var modelData

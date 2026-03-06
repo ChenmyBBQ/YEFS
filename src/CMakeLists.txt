@@ -11,6 +11,11 @@ find_package(Qt6 6.5 REQUIRED COMPONENTS Quick Location Positioning Network)
 qt_standard_project_setup(REQUIRES 6.5)
 
 # ============================================================================
+# DBCompt 数据库组件（动态库，所有插件共享）
+# ============================================================================
+add_subdirectory(dbcompt)
+
+# ============================================================================
 # 核心框架源文件
 # ============================================================================
 set(CORE_SOURCES
@@ -184,6 +189,7 @@ target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/core
     ${CMAKE_CURRENT_SOURCE_DIR}/cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/dbcompt
 )
 
 # ============================================================================
@@ -195,6 +201,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Location
     Qt6::Positioning
     Qt6::Network
+    DBCompt
     HuskarUIBasic
     QMapLibre::Core
     QMapLibre::Location

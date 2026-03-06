@@ -76,5 +76,5 @@ endif()
 #Your project
 add_subdirectory(src)
 
-# Plugins
+# Plugins（依赖 DBCompt，须在 src 之后构建）
 add_subdirectory(plugins/AirspaceManagerPlugin)

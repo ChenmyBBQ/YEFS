@@ -1,0 +1,31 @@
+{
+  "version": "1.0.0",
+  "database": {
+    "type": "sqlite",
+    "path": "AppData/yefs.db"
+  },
+  "tables": [
+    {
+      "name": "airspaces",
+      "fields": [
+        { "name": "id",              "type": "text",    "primaryKey": true, "notNull": true },
+        { "name": "name",            "type": "text",    "notNull": true,    "default": "" },
+        { "name": "shape_type",      "type": "integer", "notNull": true },
+        { "name": "geojson",         "type": "text",    "notNull": true,    "default": "{}" },
+        { "name": "style_json",      "type": "text",                        "default": "{}" },
+        { "name": "properties_json", "type": "text",                        "default": "{}" },
+        { "name": "visible",         "type": "integer",                     "default": "1" },
+        { "name": "created_at",      "type": "text",    "notNull": true },
+        { "name": "updated_at",      "type": "text",    "notNull": true }
+      ],
+      "indexes": [
+        { "name": "idx_airspaces_name",       "fields": ["name"] },
+        { "name": "idx_airspaces_shape_type", "fields": ["shape_type"] }
+      ],
+      "migration": {
+        "rename": {},
+        "drop": []
+      }
+    }
+  ]
+}

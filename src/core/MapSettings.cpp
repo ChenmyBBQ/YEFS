@@ -170,13 +170,14 @@ void MapSettings::load()
         m_currentProviderIndex = 0;
     }
 
-    // 若当前选择 Bing 且仍使用默认 MapTiler Key，则回退到可用默认底图
+    // 若当前选择需要 Key 的地图但 Key 无效，则回退到默认底图（MapTiler 有内置 Key）
     if (m_currentProviderIndex >= 0 && m_currentProviderIndex < m_providers.size()) {
         const QVariantMap provider = m_providers[m_currentProviderIndex].toMap();
         const QString category = provider.value("category").toString();
-        if (category == "Bing") {
-            const bool keyInvalid = m_apiKey.isEmpty() || m_apiKey == "pIYKyqRw5KwCNhksntqa" || m_apiKey.length() < 8;
-            if (keyInvalid) {
+        const bool needsKey = provider.value("needsApiKey").toBool();
+        if (needsKey) {
+            const QString key = m_sourceKeys.value(category).toString();
+            if (key.isEmpty() || key.length() < 8) {
                 m_currentProviderIndex = 0;
             }
         }

@@ -10,15 +10,18 @@ import './Home'
 
 HusWindow {
     id: mainWindow
+    property bool startupCoverDismissed: false
+    property color startupCoverColor: "#b8d9f0"
     width: 1400
     height: 900
     minimumWidth: 800
     minimumHeight: 600
     title: qsTr('YEFS - GIS Platform')
     followThemeSwitch: true
+    color: startupCoverDismissed ? HusTheme.Primary.colorBgContainer : startupCoverColor
     captionBar.visible: Qt.platform.os === 'windows' || Qt.platform.os === 'linux' || Qt.platform.os === 'osx'
     captionBar.height: captionBar.visible ? 30 : 0
-    captionBar.color: HusTheme.Primary.colorBgContainer
+    captionBar.color: startupCoverDismissed ? HusTheme.Primary.colorBgContainer : startupCoverColor
     captionBar.showWinIcon: Qt.platform.os !== 'osx'
     captionBar.winIconWidth: 22
     captionBar.winIconHeight: 22
@@ -36,6 +39,7 @@ HusWindow {
     captionBar.topCallback: (checked) => {
         HusApi.setWindowStaysOnTopHint(mainWindow, checked);
     }
+
     captionBar.winPresetButtonsDelegate: Row {
         Connections {
             target: mainWindow.captionBar
@@ -241,19 +245,6 @@ HusWindow {
     onClosing: (close) => {
         console.log("[Main] Window closing, calling Qt.quit()");
         Qt.quit()
-    }
-
-    Component.onCompleted: {
-        // 直接设置窗口底色，不启用系统特效，确保所有区域颜色一致
-        mainWindow.color = HusTheme.Primary.colorBgContainer;
-    }
-
-    // 主题切换时同步更新窗口底色
-    Connections {
-        target: HusTheme
-        function onIsDarkChanged() {
-            mainWindow.color = HusTheme.Primary.colorBgContainer;
-        }
     }
 
     property var yefsGlobal: YefsGlobal { }
@@ -638,6 +629,22 @@ HusWindow {
                 }
             }
 
+            Rectangle {
+                id: startupCover
+                anchors.fill: parent
+                z: 10000
+                color: mainWindow.startupCoverColor
+                visible: opacity > 0.01
+                opacity: mainWindow.startupCoverDismissed ? 0.0 : 1.0
+
+                Behavior on opacity {
+                    NumberAnimation {
+                        duration: 180
+                        easing.type: Easing.OutCubic
+                    }
+                }
+            }
+
         }
     }
 
@@ -646,6 +653,10 @@ HusWindow {
         target: MessageBus
 
         function onMessage(topic, data) {
+            if (topic === "map/startup-visual-ready" && !mainWindow.startupCoverDismissed) {
+                mainWindow.startupCoverDismissed = true
+            }
+
             console.log("[Main] Message:", topic, JSON.stringify(data))
         }
     }

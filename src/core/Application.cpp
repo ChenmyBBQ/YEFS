@@ -12,12 +12,14 @@
 #include "parsers/GeoJSONParser.h"
 #include "parsers/GPXParser.h"
 #include "parsers/KMLParser.h"
+#include "dbcompt/DBCompt.h"
 
 #include <QQuickWindow>
 #include <QFontDatabase>
 #include <QMapLibre/Utils>
 #include <QLoggingCategory>
 #include <QDebug>
+#include <QtQml/qqml.h>
 
 // HuskarUI
 #include "husapp.h"
@@ -26,6 +28,25 @@
 #include <QtQml/qqmlextensionplugin.h>
 Q_IMPORT_QML_PLUGIN(HuskarUI_BasicPlugin)
 #endif
+
+// qt_add_qml_module 生成的注册入口。手动注册 DBCompt 前，先确保 YEFSApp 的
+// 现有 C++ 单例和类型已进入 QML 元系统，避免运行时只看到 DBCompt 而看不到
+// MapSettings / MessageBus 等原有单例。
+void qml_register_types_YEFSApp();
+
+namespace {
+
+bool ensureYefsQmlTypesRegistered()
+{
+    if (qmlTypeId("YEFSApp", 1, 0, "MapSettings") != -1) {
+        return true;
+    }
+
+    qml_register_types_YEFSApp();
+    return qmlTypeId("YEFSApp", 1, 0, "MapSettings") != -1;
+}
+
+} // namespace
 
 namespace YEFS {
 
@@ -64,6 +85,7 @@ void Application::cleanup()
     MapLibreEngine::destroy();
     AppIconManager::destroy();
     NerdIcon::destroy();
+    DBCompt::destroy();            // 关闭数据库连接
     SettingsManager::destroy();   // 析构时自动保存未刷新的设置
     MessageBus::destroy();        // 最后销毁消息总线
 
@@ -118,6 +140,18 @@ bool Application::initialize()
     registerQmlTypes();
     registerQmlSingletons();
 
+    // 初始化 DBCompt（数据库组件）- 须在插件加载前完成
+    {   // schema 文件相对应用目录放在 AppConfig/db_schema.json
+        const QString schemaPath = m_app->applicationDirPath()
+                                   + QStringLiteral("/AppConfig/db_schema.json");
+        if (!DBCompt::instance()->open(schemaPath)) {
+            qWarning() << "[Application] DBCompt 打开失败:"
+                       << DBCompt::instance()->lastError();
+        } else {
+            qDebug() << "[Application] DBCompt 已就绪";
+        }
+    }
+
     // 初始化并加载所有插件
     PluginManager::instance()->loadAllPlugins();
 
@@ -157,13 +191,19 @@ int Application::run()
 
 void Application::registerQmlTypes()
 {
-    // 核心类型已通过 QML_ELEMENT 自动注册
+    if (!ensureYefsQmlTypesRegistered()) {
+        qWarning() << "[Application] YEFSApp QML 类型注册失败";
+        return;
+    }
+
     qDebug() << "[Application] QML types registered";
 }
 
 void Application::registerQmlSingletons()
 {
-    // 单例通过 QML_SINGLETON 自动注册
+    // 内建单例通过 QML_SINGLETON 自动注册
+    // DBCompt 在动态库中，需要手动注册为 QML 单例
+    qmlRegisterSingletonInstance("YEFSApp", 1, 0, "DBCompt", DBCompt::instance());
     qDebug() << "[Application] QML singletons registered";
 }
 

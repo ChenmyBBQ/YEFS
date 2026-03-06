@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt6 6.5 REQUIRED COMPONENTS Quick Sql Positioning)
+find_package(Qt6 6.5 REQUIRED COMPONENTS Quick Positioning)
 
 # ============================================================================
 # 插件动态库 (MODULE 类型，供 QPluginLoader 加载)
@@ -28,12 +28,13 @@ add_library(${PROJECT_NAME} MODULE
 target_include_directories(${PROJECT_NAME} PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}/src/core
+    ${CMAKE_SOURCE_DIR}/src/dbcompt
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Qt6::Quick
-    Qt6::Sql
     Qt6::Positioning
+    DBCompt
 )
 
 # ============================================================================
