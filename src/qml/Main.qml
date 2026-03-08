@@ -37,11 +37,11 @@ HusWindow {
     }
 
     function toggleSettingsPanel() {
-        console.log("[Settings] Button clicked, active:", settingsLoader.active, "visible:", settingsLoader.visible)
-        if (!settingsLoader.active)
-            settingsLoader.active = true
-        settingsLoader.visible = !settingsLoader.visible
-        console.log("[Settings] After toggle, visible:", settingsLoader.visible)
+        console.log('[Settings] Button clicked, loadedOnce:', settingsOverlay.loadedOnce, 'visible:', settingsOverlay.settingsVisible)
+        if (!settingsOverlay.loadedOnce)
+            settingsOverlay.loadedOnce = true
+        settingsOverlay.settingsVisible = !settingsOverlay.settingsVisible
+        console.log('[Settings] After toggle, visible:', settingsOverlay.settingsVisible)
     }
 
     function handleSearchSelection(option) {
@@ -94,41 +94,8 @@ HusWindow {
         HusApi.setWindowStaysOnTopHint(mainWindow, checked);
     }
 
-    captionBar.winPresetButtonsDelegate: Row {
-        Connections {
-            target: mainWindow.captionBar
-            function onWindowAgentChanged() {
-                mainWindow.captionBar.addInteractionItem(themeButton);
-                mainWindow.captionBar.addInteractionItem(topButton);
-                mainWindow.captionBar.addInteractionItem(themeColorCaptionButton);
-            }
-        }
-
-        ThemeColorPickerBtn {
-            id: themeColorCaptionButton
-        }
-
-        HusCaptionButton {
-            id: themeButton
-            height: parent.height
-            noDisabledState: true
-            iconSource: HusTheme.isDark ? HusIcon.MoonOutlined : HusIcon.SunOutlined
-            iconSize: 14
-            contentDescription: qsTr('明暗主题切换')
-            onClicked: mainWindow.captionBar.themeCallback(); // qmllint disable missing-property
-        }
-
-        HusCaptionButton {
-            id: topButton
-            height: parent.height
-            noDisabledState: true
-            iconSource: HusIcon.PushpinOutlined
-            iconSize: 14
-            checkable: true
-            checked: mainWindow.captionBar.topButtonChecked // qmllint disable missing-property
-            contentDescription: qsTr('置顶')
-            onClicked: mainWindow.captionBar.topCallback(checked); // qmllint disable missing-property
-        }
+    captionBar.winPresetButtonsDelegate: CaptionPresetButtons {
+        captionBarHost: mainWindow.captionBar
     }
 
     // 确保窗口关闭时完全退出应用程序
@@ -248,71 +215,20 @@ HusWindow {
             Loader {
                 id: containerLoader
                 anchors.fill: parent
-                visible: !settingsLoader.visible
+                visible: !settingsOverlay.settingsVisible
                 source: './Home/MapPage.qml'
             }
 
-            // 设置页面 Loader
-            Loader {
-                id: settingsLoader
+            MainSettingsOverlay {
+                id: settingsOverlay
                 anchors.fill: parent
-                active: false
-                visible: false
                 source: "./Home/SettingsPage.qml"
-
-                onStatusChanged: {
-                    if (status === Loader.Error) {
-                        console.error("[Settings] Loader error:", errorString());
-                    } else {
-                        console.log("[Settings] Loader status:", status, "active:", active, "visible:", visible);
-                    }
-                }
-                
-                Connections {
-                    target: settingsLoader.item
-                    function onCloseRequested() { settingsLoader.visible = false }
-                    function onApplyRequested() { console.log("[Settings] Apply requested") }
-                }
             }
 
-            Rectangle {
-                anchors.centerIn: parent
-                width: Math.min(parent.width - 40, 700)
-                height: settingsErrorText.implicitHeight + 24
-                radius: HusTheme.Primary.radiusPrimary
-                color: HusThemeFunctions.alpha(HusTheme.Primary.colorError, 0.08)
-                border.color: HusTheme.Primary.colorError
-                visible: settingsLoader.visible && settingsLoader.status === Loader.Error
-                z: 999
-
-                HusText {
-                    id: settingsErrorText
-                    anchors.centerIn: parent
-                    width: parent.width - 24
-                    wrapMode: HusText.WrapAnywhere
-                    color: "red" // Force red color to ensure visibility
-                    text: {
-                        if (settingsLoader.status === Loader.Error)
-                            return qsTr("设置页面加载失败：请查看控制台日志。");
-                        return "";
-                    }
-                }
-            }
-
-            Rectangle {
-                id: startupCover
+            StartupCoverOverlay {
                 anchors.fill: parent
-                z: 10000
-                color: mainWindow.startupCoverColor
-                visible: opacity > 0.01
-                opacity: mainWindow.startupCoverDismissed ? 0.0 : 1.0
-
-                Behavior on opacity {
-                    NumberAnimation {
-                        duration: 180
-                        easing.type: Easing.OutCubic
-                    }
-                }
+                dismissed: mainWindow.startupCoverDismissed
+                coverColor: mainWindow.startupCoverColor
             }
 
         }
