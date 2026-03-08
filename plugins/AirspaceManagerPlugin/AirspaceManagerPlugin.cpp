@@ -72,6 +72,46 @@ bool AirspaceManagerPlugin::initialize(YEFS::PluginContext* context)
                         Q_ARG(QVariant, QVariant::fromValue(stateData)));
                 }
             });
+
+            // 绘制预览更新 → 实时同步到地图预览图层
+            connect(m_drawCtrl, &DrawingController::previewUpdated,
+                    this, [this](const QJsonObject& geoJson) {
+                if (geoJson.isEmpty()) return;
+                auto* engine = m_context ? m_context->getService(QStringLiteral("MapLibreEngine")) : nullptr;
+                if (!engine) return;
+                if (m_previewLayerExists) {
+                    // 已有图层：只更新数据，避免逐帧remove+add造成闪烁
+                    QMetaObject::invokeMethod(engine, "updateLayerData",
+                        Q_ARG(QString, QStringLiteral("airspace-preview")),
+                        Q_ARG(QJsonObject, geoJson));
+                } else {
+                    QVariantMap style;
+                    style[QStringLiteral("fill-color")]   = QStringLiteral("#1890ff");
+                    style[QStringLiteral("fill-opacity")] = 0.2;
+                    style[QStringLiteral("line-color")]   = QStringLiteral("#1890ff");
+                    style[QStringLiteral("line-width")]   = 2;
+                    QVariantList dash; dash << 4 << 4;
+                    style[QStringLiteral("line-dasharray")] = dash;
+                    QMetaObject::invokeMethod(engine, "addGeoJSONLayer",
+                        Q_ARG(QString, QStringLiteral("airspace-preview")),
+                        Q_ARG(QJsonObject, geoJson),
+                        Q_ARG(QVariantMap, style));
+                    m_previewLayerExists = true;
+                }
+            });
+
+            // 绘制取消/完成 → 移除预览图层
+            auto removePreview = [this]() {
+                auto* engine = m_context ? m_context->getService(QStringLiteral("MapLibreEngine")) : nullptr;
+                if (engine && m_previewLayerExists) {
+                    QMetaObject::invokeMethod(engine, "removeLayer",
+                        Q_ARG(QString, QStringLiteral("airspace-preview")));
+                    m_previewLayerExists = false;
+                }
+            };
+            connect(m_drawCtrl, &DrawingController::drawingCancelled, this, removePreview);
+            connect(m_drawCtrl, &DrawingController::drawingCompleted,
+                    this, [removePreview](const QJsonObject&, int) { removePreview(); });
         }
     }
 

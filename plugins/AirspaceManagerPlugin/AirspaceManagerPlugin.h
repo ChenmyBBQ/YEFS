@@ -57,6 +57,7 @@ private:
     AirspaceModel*     m_model     = nullptr;
     ShapeGenerator*    m_shapeGen  = nullptr;
     DrawingController* m_drawCtrl  = nullptr;
+    bool               m_previewLayerExists = false;
 };
 
 #endif // AIRSPACEMANAGERPLUGIN_H

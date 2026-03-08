@@ -88,6 +88,8 @@ public slots:
     void onMessage(const QString& topic, const QVariant& data);
 
 private:
+    void updateHoverPoint(double latitude, double longitude);
+    void clearHoverPoint();
     void updatePreview();
     void setStatusText(const QString& text);
 
@@ -105,6 +107,8 @@ private:
     DrawingState m_state      = Idle;
     int          m_shapeType  = -1;
     QVariantList m_points;      // [[lat,lng], ...]
+    QVariantList m_hoverPoint;  // [lat,lng]
+    bool         m_hasHoverPoint = false;
     QJsonObject  m_previewGeoJson;
     QString      m_statusText;
 };

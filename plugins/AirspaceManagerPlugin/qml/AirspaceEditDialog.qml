@@ -2,6 +2,7 @@ import QtQuick
 import QtQuick.Layouts
 import HuskarUI.Basic
 import AirspaceManager 1.0
+import "components"
 
 /**
  * 空域编辑弹窗 (右侧抽屉)

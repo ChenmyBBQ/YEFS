@@ -1,9 +1,35 @@
 #include "MapLibreEngine.h"
 #include "MessageBus.h"
+#include <QMapLibre/Map>
 #include <QDebug>
 #include <QMetaObject>
+#include <QJsonArray>
+#include <QJsonDocument>
 
 namespace YEFS {
+
+// ---------- 内部辅助函数 ----------
+
+static QMapLibre::Map* getNativeMap(QObject* mapItem) {
+    if (!mapItem) return nullptr;
+    QObject* result = nullptr;
+    QMetaObject::invokeMethod(mapItem, "getNativeMap",
+                              Qt::DirectConnection,
+                              Q_RETURN_ARG(QObject*, result));
+    return qobject_cast<QMapLibre::Map*>(result);
+}
+
+static QString detectGeometryType(const QJsonObject& geoJson) {
+    QString type = geoJson["type"].toString();
+    if (type == QLatin1String("Feature"))
+        return geoJson["geometry"].toObject()["type"].toString();
+    if (type == QLatin1String("FeatureCollection")) {
+        auto features = geoJson["features"].toArray();
+        if (!features.isEmpty())
+            return features[0].toObject()["geometry"].toObject()["type"].toString();
+    }
+    return type;
+}
 
 MapLibreEngine* MapLibreEngine::s_instance = nullptr;
 
@@ -101,18 +127,49 @@ void MapLibreEngine::flyTo(double latitude, double longitude, double zoom, int d
     }
 }
 
-void MapLibreEngine::addGeoJSONLayer(const QString& layerId, 
+void MapLibreEngine::addGeoJSONLayer(const QString& layerId,
                                       const QJsonObject& geoJson,
                                       const QVariantMap& style)
 {
     m_layers[layerId] = geoJson;
 
-    if (m_mapItem) {
-        QMetaObject::invokeMethod(m_mapItem, "addGeoJSONLayer",
-                                  Q_ARG(QString, layerId),
-                                  Q_ARG(QJsonObject, geoJson),
-                                  Q_ARG(QVariantMap, style));
+    auto* map = getNativeMap(m_mapItem);
+    if (!map) {
+        qWarning() << "[MapLibreEngine] addGeoJSONLayer: native map not ready";
+        return;
     }
+
+    // 添加 GeoJSON 数据源，data 必须是 JSON 字节（QByteArray），不能是 QVariantMap
+    QVariantMap sourceParams;
+    sourceParams[QStringLiteral("type")] = QStringLiteral("geojson");
+    sourceParams[QStringLiteral("data")] = QJsonDocument(geoJson).toJson(QJsonDocument::Compact);
+    map->addSource(layerId + QStringLiteral("-source"), sourceParams);
+
+    // 根据几何类型分别添加填充层和线框层
+    const QString geomType = detectGeometryType(geoJson);
+    if (geomType == QLatin1String("Polygon") || geomType == QLatin1String("MultiPolygon")) {
+        QVariantMap fillParams;
+        fillParams[QStringLiteral("type")]   = QStringLiteral("fill");
+        fillParams[QStringLiteral("source")] = layerId + QStringLiteral("-source");
+        map->addLayer(layerId + QStringLiteral("-fill"), fillParams);
+        map->setPaintProperty(layerId + QStringLiteral("-fill"), QStringLiteral("fill-color"),
+                              style.value(QStringLiteral("fill-color"), QStringLiteral("#3388ff")));
+        map->setPaintProperty(layerId + QStringLiteral("-fill"), QStringLiteral("fill-opacity"),
+                              style.value(QStringLiteral("fill-opacity"), 0.3));
+    }
+
+    // 所有几何类型都添加边界线层
+    QVariantMap lineParams;
+    lineParams[QStringLiteral("type")]   = QStringLiteral("line");
+    lineParams[QStringLiteral("source")] = layerId + QStringLiteral("-source");
+    map->addLayer(layerId + QStringLiteral("-line"), lineParams);
+    map->setPaintProperty(layerId + QStringLiteral("-line"), QStringLiteral("line-color"),
+                          style.value(QStringLiteral("line-color"), QStringLiteral("#3388ff")));
+    map->setPaintProperty(layerId + QStringLiteral("-line"), QStringLiteral("line-width"),
+                          style.value(QStringLiteral("line-width"), 2));
+    if (style.contains(QStringLiteral("line-dasharray")))
+        map->setPaintProperty(layerId + QStringLiteral("-line"), QStringLiteral("line-dasharray"),
+                              style[QStringLiteral("line-dasharray")]);
 
     emit layerAdded(layerId);
     MessageBus::instance()->publish(Topics::MAP_LAYER_ADDED, layerId);
@@ -122,9 +179,14 @@ void MapLibreEngine::removeLayer(const QString& layerId)
 {
     m_layers.remove(layerId);
 
-    if (m_mapItem) {
-        QMetaObject::invokeMethod(m_mapItem, "removeLayer",
-                                  Q_ARG(QString, layerId));
+    auto* map = getNativeMap(m_mapItem);
+    if (map) {
+        if (map->layerExists(layerId + QStringLiteral("-fill")))
+            map->removeLayer(layerId + QStringLiteral("-fill"));
+        if (map->layerExists(layerId + QStringLiteral("-line")))
+            map->removeLayer(layerId + QStringLiteral("-line"));
+        if (map->sourceExists(layerId + QStringLiteral("-source")))
+            map->removeSource(layerId + QStringLiteral("-source"));
     }
 
     emit layerRemoved(layerId);
@@ -133,21 +195,29 @@ void MapLibreEngine::removeLayer(const QString& layerId)
 
 void MapLibreEngine::setLayerVisibility(const QString& layerId, bool visible)
 {
-    if (m_mapItem) {
-        QMetaObject::invokeMethod(m_mapItem, "setLayerVisibility",
-                                  Q_ARG(QString, layerId),
-                                  Q_ARG(bool, visible));
-    }
+    auto* map = getNativeMap(m_mapItem);
+    if (!map) return;
+    const QString vis = visible ? QStringLiteral("visible") : QStringLiteral("none");
+    if (map->layerExists(layerId + QStringLiteral("-fill")))
+        map->setLayoutProperty(layerId + QStringLiteral("-fill"), QStringLiteral("visibility"), vis);
+    if (map->layerExists(layerId + QStringLiteral("-line")))
+        map->setLayoutProperty(layerId + QStringLiteral("-line"), QStringLiteral("visibility"), vis);
 }
 
 void MapLibreEngine::updateLayerData(const QString& layerId, const QJsonObject& geoJson)
 {
     m_layers[layerId] = geoJson;
 
-    if (m_mapItem) {
-        QMetaObject::invokeMethod(m_mapItem, "updateLayerData",
-                                  Q_ARG(QString, layerId),
-                                  Q_ARG(QJsonObject, geoJson));
+    auto* map = getNativeMap(m_mapItem);
+    if (!map) return;
+    if (map->sourceExists(layerId + QStringLiteral("-source"))) {
+        QVariantMap params;
+        params[QStringLiteral("type")] = QStringLiteral("geojson");
+        params[QStringLiteral("data")] = QJsonDocument(geoJson).toJson(QJsonDocument::Compact);
+        map->updateSource(layerId + QStringLiteral("-source"), params);
+    } else {
+        // 源不存在时退回到完整添加
+        addGeoJSONLayer(layerId, geoJson, {});
     }
 }
 

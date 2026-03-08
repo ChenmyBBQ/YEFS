@@ -29,9 +29,9 @@ ColumnLayout {
         try {
             let obj = JSON.parse(json)
             styleData = obj
-            fillColorPicker.currentColor = obj["fill-color"] || "#3388ff"
+            fillColorPicker.changeValue = obj["fill-color"] || "#3388ff"
             fillOpacitySlider.value = (obj["fill-opacity"] || 0.3) * 100
-            lineColorPicker.currentColor = obj["line-color"] || "#3388ff"
+            lineColorPicker.changeValue = obj["line-color"] || "#3388ff"
             lineWidthSlider.value = obj["line-width"] || 2
             let dash = obj["line-dasharray"] || []
             lineStyleSelect.currentIndex = dash.length > 0 ? (dash[0] === 4 ? 1 : 2) : 0
@@ -44,9 +44,9 @@ ColumnLayout {
         HusText { text: qsTr('填充颜色'); Layout.preferredWidth: 80 }
         HusColorPicker {
             id: fillColorPicker
-            currentColor: "#3388ff"
-            onCurrentColorChanged: {
-                styleData["fill-color"] = currentColor
+            defaultValue: "#3388ff"
+            onChange: function(color) {
+                styleData["fill-color"] = color
                 root.styleChanged(styleData)
             }
         }
@@ -77,9 +77,9 @@ ColumnLayout {
         HusText { text: qsTr('边框颜色'); Layout.preferredWidth: 80 }
         HusColorPicker {
             id: lineColorPicker
-            currentColor: "#3388ff"
-            onCurrentColorChanged: {
-                styleData["line-color"] = currentColor
+            defaultValue: "#3388ff"
+            onChange: function(color) {
+                styleData["line-color"] = color
                 root.styleChanged(styleData)
             }
         }

@@ -74,12 +74,14 @@ void DrawingController::startDrawing(int shapeType)
     m_shapeType = shapeType;
     m_state = Drawing;
     m_points.clear();
+    m_hoverPoint.clear();
+    m_hasHoverPoint = false;
     m_previewGeoJson = {};
 
     emit currentShapeTypeChanged(m_shapeType);
     emit drawingStateChanged(m_state);
     emit pointsChanged();
-    setStatusText(QStringLiteral("请在地图上点击选取坐标点"));
+    setStatusText(QStringLiteral("左键点击取点，按住拖动平移地图，右键取消"));
 }
 
 void DrawingController::addPoint(double latitude, double longitude)
@@ -87,6 +89,7 @@ void DrawingController::addPoint(double latitude, double longitude)
     if (m_state != Drawing) return;
 
     m_points.append(QVariant(QVariantList{ latitude, longitude }));
+    clearHoverPoint();
     emit pointsChanged();
 
     int minPts = minPointsForShape();
@@ -95,9 +98,9 @@ void DrawingController::addPoint(double latitude, double longitude)
     if (minPts > 0) {
         int rem = minPts - n;
         if (rem > 0)
-            setStatusText(QStringLiteral("还需要 %1 个点").arg(rem));
+            setStatusText(QStringLiteral("还需要 %1 个点（右键可取消）").arg(rem));
     } else {
-        setStatusText(QStringLiteral("已采集 %1 个点，点击「完成」结束").arg(n));
+        setStatusText(QStringLiteral("已采集 %1 个点，点击「完成」结束（右键可取消）").arg(n));
     }
 
     updatePreview();
@@ -127,6 +130,7 @@ void DrawingController::finishDrawing()
         setStatusText(QStringLiteral("边界线至少需要 2 个点")); return;
     }
 
+    clearHoverPoint();
     updatePreview();
     m_state = Editing;
     emit drawingStateChanged(m_state);
@@ -140,6 +144,8 @@ void DrawingController::cancel()
     m_state = Idle;
     m_shapeType = -1;
     m_points.clear();
+    m_hoverPoint.clear();
+    m_hasHoverPoint = false;
     m_previewGeoJson = {};
 
     emit drawingStateChanged(m_state);
@@ -182,6 +188,13 @@ void DrawingController::onMessage(const QString& topic, const QVariant& data)
         auto map = data.toMap();
         addPoint(map.value("latitude").toDouble(),
                  map.value("longitude").toDouble());
+    } else if (topic == QLatin1String("map/hovered") && m_state == Drawing) {
+        auto map = data.toMap();
+        updateHoverPoint(map.value("latitude").toDouble(),
+                         map.value("longitude").toDouble());
+    } else if (topic == QLatin1String("map/hovered/clear") && m_state == Drawing) {
+        clearHoverPoint();
+        updatePreview();
     } else if (topic == QLatin1String("airspace-manager/draw")) {
         auto map = data.toMap();
         int shapeType = map.value("shapeType", 0).toInt();
@@ -193,17 +206,37 @@ void DrawingController::onMessage(const QString& topic, const QVariant& data)
     }
 }
 
+void DrawingController::updateHoverPoint(double latitude, double longitude)
+{
+    if (m_state != Drawing)
+        return;
+
+    m_hoverPoint = QVariantList{ latitude, longitude };
+    m_hasHoverPoint = true;
+    updatePreview();
+}
+
+void DrawingController::clearHoverPoint()
+{
+    m_hoverPoint.clear();
+    m_hasHoverPoint = false;
+}
+
 // ============================================================================
 // 预览
 // ============================================================================
 
 void DrawingController::updatePreview()
 {
-    int n = m_points.size();
+    QVariantList previewPoints = m_points;
+    if (m_state == Drawing && m_hasHoverPoint && m_hoverPoint.size() == 2)
+        previewPoints.append(QVariant(m_hoverPoint));
+
+    int n = previewPoints.size();
     if (n == 0) { m_previewGeoJson = {}; return; }
 
-    auto lat = [this](int i) { return m_points[i].toList()[0].toDouble(); };
-    auto lng = [this](int i) { return m_points[i].toList()[1].toDouble(); };
+    auto lat = [&previewPoints](int i) { return previewPoints[i].toList()[0].toDouble(); };
+    auto lng = [&previewPoints](int i) { return previewPoints[i].toList()[1].toDouble(); };
 
     switch (m_shapeType) {
     case 0: // Rectangle
@@ -217,11 +250,11 @@ void DrawingController::updatePreview()
         else        m_previewGeoJson = m_shapeGen->generateCircle(lat(0), lng(0), 100);
         break;
     case 3: // Polygon
-        if (n >= 3) m_previewGeoJson = m_shapeGen->generatePolygon(m_points);
-        else if (n >= 2) m_previewGeoJson = m_shapeGen->generateBoundary(m_points);
+        if (n >= 3) m_previewGeoJson = m_shapeGen->generatePolygon(previewPoints);
+        else if (n >= 2) m_previewGeoJson = m_shapeGen->generateBoundary(previewPoints);
         break;
     case 4: // Boundary
-        if (n >= 2) m_previewGeoJson = m_shapeGen->generateBoundary(m_points);
+        if (n >= 2) m_previewGeoJson = m_shapeGen->generateBoundary(previewPoints);
         break;
     case 5: { // Ring
         if (n >= 3) {

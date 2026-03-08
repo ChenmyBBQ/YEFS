@@ -49,6 +49,7 @@ class AppIconManager : public QObject
     // ── 动作 / 状态（字体图标）────────────────────────────────
     Q_PROPERTY(QString dragHandle     READ dragHandle     CONSTANT)
     Q_PROPERTY(QString newAirspace    READ newAirspace    CONSTANT)
+    Q_PROPERTY(QString cursorPointer  READ cursorPointer  CONSTANT)
 
     // ── 空域形状（SVG 图标，配合 AppIcon.qml 使用）────────────
     Q_PROPERTY(QString shapeRectangle  READ shapeRectangle  CONSTANT)
@@ -84,8 +85,9 @@ public:
     QString satellite()  const { return QStringLiteral("\uf7bf"); }  // fa-satellite
 
     // ── 动作 / 状态 ─────────────────────────────────────────
-    QString dragHandle()  const { return QStringLiteral("\uf0b2"); }  // fa-arrows-alt
-    QString newAirspace() const { return QStringLiteral("\uf247"); }
+    QString dragHandle()   const { return QStringLiteral("\uf0b2"); }  // fa-arrows-alt
+    QString newAirspace()  const { return QStringLiteral("\uf247"); }
+    QString cursorPointer() const { return QStringLiteral("\uf245"); }  // fa-mouse-pointer
 
     // ── 空域形状（SVG qrc:// 路径）──────────────────────────
     QString shapeRectangle()  const { return QStringLiteral("qrc:/YEFSApp/resources/icons/shapes/shape_rectangle.svg"); }

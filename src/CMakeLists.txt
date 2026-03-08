@@ -63,8 +63,8 @@ add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
 # QML 模块
 # ============================================================================
 
-# 收集所有 QML 文件
-file(GLOB_RECURSE QML_FILES RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "qml/*.qml")
+# 收集所有 QML 文件。使用 CONFIGURE_DEPENDS，避免新增组件后未重新配置导致模块清单遗漏。
+file(GLOB_RECURSE QML_FILES CONFIGURE_DEPENDS RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "qml/*.qml")
 
 qt_add_qml_module(${PROJECT_NAME}
     URI YEFSApp
@@ -85,6 +85,10 @@ qt_add_qml_module(${PROJECT_NAME}
         core/PluginManager.cpp
         core/MapLibreEngine.h
         core/MapLibreEngine.cpp
+        core/MapPageStateController.h
+        core/MapPageStateController.cpp
+        core/MapPageStyleController.h
+        core/MapPageStyleController.cpp
         core/MapSettings.h
         core/MapSettings.cpp
         core/SettingsManager.h
