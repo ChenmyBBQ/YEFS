@@ -31,7 +31,6 @@ public:
     static SettingsManager* instance();
     static void destroy();
 
-    explicit SettingsManager(QObject *parent = nullptr);
     ~SettingsManager() override;
 
     // 获取设置值
@@ -68,6 +67,8 @@ signals:
     void settingsSaved();
 
 private:
+    explicit SettingsManager(QObject *parent = nullptr);
+
     void load();
     void ensureSettingsDir();
     

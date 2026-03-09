@@ -34,6 +34,12 @@ MapPageStyleController::MapPageStyleController(QObject* parent)
 {
     m_currentStyleUrl = resolveConfiguredStyleUrl();
 
+    MapSettings* ms = MapSettings::instance();
+    connect(ms, &MapSettings::styleUrlChanged,
+            this, [this]() {
+                refreshConfiguredStyle();
+            });
+
     connect(SettingsManager::instance(), &SettingsManager::settingsChanged,
             this, &MapPageStyleController::onSettingsChanged);
 }
@@ -86,19 +92,29 @@ void MapPageStyleController::onSettingsChanged(const QString& category, const QS
 
 QString MapPageStyleController::resolveConfiguredStyleUrl() const
 {
-    QString styleUrl = MapSettings::instance()->styleUrl();
+    // 优先从 SettingsManager 读取 —— 无论是哪个 MapSettings 实例写入，
+    // save() 总是会更新 SettingsManager，因此这里永远能拿到最新值。
+    // 避免了 Qt6 QML 类型系统创建第二个 MapSettings 实例时，
+    // 读到旧实例（s_instance）的陈旧 styleUrl 的问题。
+    QString styleUrl = SettingsManager::instance()->getValue(
+        QStringLiteral("map"), QStringLiteral("styleUrl"), QString()).toString();
+
     if (styleUrl.isEmpty()) {
-        styleUrl = SettingsManager::instance()->getValue(QStringLiteral("map"), QStringLiteral("styleUrl"), QString()).toString();
+        // 回退：SettingsManager 还没被写入时读 C++ 单例
+        styleUrl = MapSettings::instance()->styleUrl();
     }
     if (styleUrl.isEmpty()) {
         styleUrl = QStringLiteral("https://demotiles.maplibre.org/style.json");
     }
+    qDebug() << "[StyleCtrl] resolveConfiguredStyleUrl:" << styleUrl.left(80);
     return styleUrl;
 }
 
 void MapPageStyleController::refreshConfiguredStyle(bool forceNotify)
 {
     const QString styleUrl = resolveConfiguredStyleUrl();
+    qDebug() << "[StyleCtrl] refreshConfiguredStyle: new=" << styleUrl.left(60)
+             << "cur=" << m_currentStyleUrl.left(60);
     if (!forceNotify && m_currentStyleUrl == styleUrl) {
         return;
     }

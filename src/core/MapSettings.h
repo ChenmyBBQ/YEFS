@@ -53,7 +53,6 @@ public:
     static MapSettings* create(QQmlEngine *qmlEngine, QJSEngine *jsEngine);
     static MapSettings* instance();
 
-    explicit MapSettings(QObject *parent = nullptr);
     ~MapSettings() override;
 
     int currentProviderIndex() const;
@@ -109,6 +108,10 @@ signals:
     void settingsChanged();
 
 private:
+    // 构造函数私有，防止 Qt6 QML 类型系统通过公共构造创建额外实例
+    // 只能通过 instance() / create() 访问
+    explicit MapSettings(QObject *parent = nullptr);
+
     void load();
     void updateStyleUrl();
     QString keyForCategory(const QString &category) const;

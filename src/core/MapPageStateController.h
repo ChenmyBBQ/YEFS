@@ -31,7 +31,6 @@ public:
     static MapPageStateController* create(QQmlEngine* qmlEngine, QJSEngine* jsEngine);
     static void destroy();
 
-    explicit MapPageStateController(QObject* parent = nullptr);
     ~MapPageStateController() override = default;
 
     QString mouseLatLonText() const;
@@ -69,6 +68,8 @@ signals:
     void drawingStatusTextChanged();
 
 private:
+    explicit MapPageStateController(QObject* parent = nullptr);
+
     static MapPageStateController* s_instance;
 
     void handleAirspaceMessage(const QString& topic, const QVariant& data);

@@ -441,7 +441,7 @@ void MapSettings::updateStyleUrl()
     
     if (m_styleUrl != newUrl) {
         m_styleUrl = newUrl;
-        qDebug() << "[MapSettings] BaseMap Style URL updated:" << m_styleUrl;
+        qDebug() << "[MapSettings] BaseMap Style URL updated:" << m_styleUrl.left(80);
         emit styleUrlChanged();
     }
 }

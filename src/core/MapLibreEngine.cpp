@@ -250,12 +250,13 @@ QPointF MapLibreEngine::coordinateToScreen(double latitude, double longitude) co
 QGeoCoordinate MapLibreEngine::screenToCoordinate(double x, double y) const
 {
     if (m_mapItem) {
-        QGeoCoordinate result;
-        QMetaObject::invokeMethod(m_mapItem, "screenToCoordinate",
-                                  Q_RETURN_ARG(QGeoCoordinate, result),
-                                  Q_ARG(double, x),
-                                  Q_ARG(double, y));
-        return result;
+        QVariantList coordinateList;
+        const bool invoked = QMetaObject::invokeMethod(m_mapItem, "coordinateForPixel",
+                                                       Q_RETURN_ARG(QVariantList, coordinateList),
+                                                       Q_ARG(QPointF, QPointF(x, y)));
+        if (invoked && coordinateList.size() >= 2) {
+            return QGeoCoordinate(coordinateList[0].toDouble(), coordinateList[1].toDouble());
+        }
     }
     return QGeoCoordinate();
 }

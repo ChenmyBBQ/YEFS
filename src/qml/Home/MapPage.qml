@@ -22,8 +22,9 @@ Rectangle {
         repeat: false
         onTriggered: {
             root.pageStyleController.handleLoadTimeout()
-            // 超时后也不强制隐藏遮罩，继续保持可见并更新文字提示
-            // 等 firstFrameReady 到来，再由遮罩淡出动画撤掉加载层
+            // 网络慢或样式端异常时，不再一直锁死蓝色遮罩
+            styleTransitionOverlay.hideAnimation.stop()
+            styleTransitionOverlay.hideAnimation.start()
         }
     }
 
@@ -76,11 +77,28 @@ Rectangle {
                 firstFrameSettleTimer.restart()
             }
         }
+
+        onMapLoadFailed: {
+            console.warn('[MapPage] map load failed, fallback to demotiles style')
+            mapLoadTimeoutTimer.stop()
+            firstFrameSettleTimer.stop()
+
+            root.pageStyleController.handleLoadTimeout()
+
+            if (root.pageStyleController.currentStyleUrl !== 'https://demotiles.maplibre.org/style.json') {
+                mapView.style = 'https://demotiles.maplibre.org/style.json'
+            }
+
+            styleTransitionOverlay.hideAnimation.stop()
+            styleTransitionOverlay.hideAnimation.start()
+        }
     }
 
     Connections {
         target: root.pageStyleController
         function onCurrentStyleUrlChanged() {
+            console.log('[MapPage] onCurrentStyleUrlChanged → mapView.style =',
+                root.pageStyleController.currentStyleUrl.substring(0, 80))
             styleTransitionOverlay.hideAnimation.stop()
             firstFrameSettleTimer.stop()
             styleTransitionOverlay.opacity = 1.0
@@ -106,6 +124,7 @@ Rectangle {
 
     MapControlDock {
         anchors.fill: root
+        z: 40
         mapView: mapView
     }
 

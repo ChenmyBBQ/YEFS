@@ -1,6 +1,8 @@
 import QtQuick 2.15
 import HuskarUI.Basic 1.0
 
+import YEFSApp
+
 Item {
     id: root
 

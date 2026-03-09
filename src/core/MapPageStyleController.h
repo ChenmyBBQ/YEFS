@@ -21,7 +21,6 @@ public:
     static MapPageStyleController* create(QQmlEngine* qmlEngine, QJSEngine* jsEngine);
     static void destroy();
 
-    explicit MapPageStyleController(QObject* parent = nullptr);
     ~MapPageStyleController() override = default;
 
     QString currentStyleUrl() const;
@@ -41,6 +40,8 @@ private slots:
     void onSettingsChanged(const QString& category, const QString& key);
 
 private:
+    explicit MapPageStyleController(QObject* parent = nullptr);
+
     static MapPageStyleController* s_instance;
 
     QString resolveConfiguredStyleUrl() const;

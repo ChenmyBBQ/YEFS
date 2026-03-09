@@ -155,7 +155,7 @@ Rectangle {
                     }
 
                     // 地图设置
-                    Settings.MapSettings {
+                    Settings.MapSettingsPanel {
                         id: mapSection
                         width: parent.width
                     }

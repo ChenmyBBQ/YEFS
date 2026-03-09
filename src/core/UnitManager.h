@@ -56,7 +56,6 @@ public:
     static UnitManager* instance();
     static void destroy();
 
-    explicit UnitManager(QObject* parent = nullptr);
     ~UnitManager() override = default;
 
     // ========== 单位访问器 ==========
@@ -229,6 +228,8 @@ signals:
     void presetApplied(const QString& mode);
 
 private:
+    explicit UnitManager(QObject* parent = nullptr);
+
     void loadSettings();
     void saveSettings();
     void updatePresetMode();
