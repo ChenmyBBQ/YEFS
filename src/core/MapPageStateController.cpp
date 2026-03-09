@@ -112,12 +112,16 @@ void MapPageStateController::handleMapTap(const QPointF& position)
     }
 
     if (m_selectedShapeType >= 0 && !m_drawingActive) {
+        // 首次点击：启动绘制流程，等待插件回复 drawing-state active=true 后再接收坐标
         MessageBus::instance()->send(QStringLiteral("airspace-manager/draw"), QVariantMap{
             {QStringLiteral("shapeType"), m_selectedShapeType}
         });
+        return;
     }
 
-    MapLibreEngine::instance()->onMapClicked(coordinate.latitude(), coordinate.longitude());
+    if (m_drawingActive) {
+        MapLibreEngine::instance()->onMapClicked(coordinate.latitude(), coordinate.longitude());
+    }
 }
 
 void MapPageStateController::handleMapHover(const QPointF& position)

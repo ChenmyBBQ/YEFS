@@ -19,8 +19,8 @@ Rectangle {
     color: isSelected
         ? HusThemeFunctions.alpha(HusTheme.Primary.colorPrimary, 0.15)
         : (hoverHandler.hovered ? HusThemeFunctions.alpha(HusTheme.Primary.colorTextBase, 0.08) : 'transparent')
-    border.color: isSelected ? HusTheme.Primary.colorPrimary : 'transparent'
-    border.width: isSelected ? 1.5 : 0
+    border.color: isSelected ? HusThemeFunctions.alpha(HusTheme.Primary.colorPrimary, 0.6) : 'transparent'
+    border.width: isSelected ? 1 : 0
 
     AppIcon {
         anchors.centerIn: parent

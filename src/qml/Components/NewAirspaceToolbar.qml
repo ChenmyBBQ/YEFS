@@ -21,8 +21,9 @@ Rectangle {
     width: root.toolbarVisible ? targetWidth : 0
     height: toolbarContent.height + 12
     radius: HusTheme.Primary.radiusPrimary
-    color: HusThemeFunctions.alpha(HusTheme.Primary.colorBgContainer, 0.8)
-    border.color: HusThemeFunctions.alpha(HusTheme.Primary.colorBorder, 0.5)
+    color: HusThemeFunctions.alpha(HusTheme.Primary.colorBgContainer, 0.85)
+    border.width: 1
+    border.color: HusThemeFunctions.alpha(HusTheme.Primary.colorBorder, 0.35)
     opacity: root.toolbarVisible ? 1 : 0
     visible: root.toolbarVisible || width > 0
     clip: true
@@ -92,8 +93,8 @@ Rectangle {
                 color: root.selectedShapeType < 0
                     ? HusThemeFunctions.alpha(HusTheme.Primary.colorPrimary, 0.15)
                     : (pointerHover.hovered ? HusThemeFunctions.alpha(HusTheme.Primary.colorTextBase, 0.08) : "transparent")
-                border.color: root.selectedShapeType < 0 ? HusTheme.Primary.colorPrimary : "transparent"
-                border.width: root.selectedShapeType < 0 ? 1.5 : 0
+                border.color: root.selectedShapeType < 0 ? HusThemeFunctions.alpha(HusTheme.Primary.colorPrimary, 0.6) : "transparent"
+                border.width: root.selectedShapeType < 0 ? 1 : 0
 
                 NerdIconText {
                     anchors.centerIn: parent
