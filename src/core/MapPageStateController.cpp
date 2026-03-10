@@ -47,6 +47,12 @@ MapPageStateController::MapPageStateController(QObject* parent)
     initializeShapeOptions();
     connect(MessageBus::instance(), &MessageBus::message,
             this, &MapPageStateController::onBusMessage);
+
+    // 合并高频 hover 事件：0ms 单次定时器确保每个事件循环批次只提交一次更新
+    m_hoverTimer = new QTimer(this);
+    m_hoverTimer->setSingleShot(true);
+    m_hoverTimer->setInterval(0);
+    connect(m_hoverTimer, &QTimer::timeout, this, &MapPageStateController::processHoverUpdate);
 }
 
 QString MapPageStateController::mouseLatLonText() const
@@ -126,21 +132,48 @@ void MapPageStateController::handleMapTap(const QPointF& position)
 
 void MapPageStateController::handleMapHover(const QPointF& position)
 {
-    const QGeoCoordinate coordinate = coordinateFromScreenPoint(position);
+    // 只存储最新位置，由 0ms 定时器在事件批次结束后统一处理一次
+    // 避免快速移动时大量重复的 JSON 序列化 + GPU 数据上传
+    m_pendingHoverPos = position;
+    if (!m_hoverTimer->isActive()) {
+        m_hoverTimer->start();
+    }
+}
+
+void MapPageStateController::processHoverUpdate()
+{
+    // 像素距离阈值：移动不足 2px 时跳过（消除亚像素抖动）
+    const QPointF delta = m_pendingHoverPos - m_lastProcessedHoverPos;
+    const bool moved = (delta.x() * delta.x() + delta.y() * delta.y()) >= 4.0;
+
+    if (!moved && m_drawingActive) {
+        // 绘图时严格跳过（坐标不变则预览也不变）
+        return;
+    }
+
+    const QGeoCoordinate coordinate = coordinateFromScreenPoint(m_pendingHoverPos);
     if (!coordinate.isValid()) {
         return;
     }
 
-    updateMouseCoordinateTexts(coordinate.latitude(), coordinate.longitude());
+    m_lastProcessedHoverPos = m_pendingHoverPos;
 
-    if (!m_drawingActive) {
-        return;
+    if (m_drawingActive) {
+        // 绘图模式：优先更新预览，跳过 UTM/MGRS 转换保证帧率
+        MessageBus::instance()->send(QStringLiteral("map/hovered"), QVariantMap{
+            {QStringLiteral("latitude"), coordinate.latitude()},
+            {QStringLiteral("longitude"), coordinate.longitude()}
+        });
+        // 坐标显示仅做 LatLon（轻量），UTM/MGRS 在非绘图时更新
+        const QString latLonText = CoordinateConverter::instance()->formatLatLon(
+            coordinate.latitude(), coordinate.longitude(), 6);
+        if (m_mouseLatLonText != latLonText) {
+            m_mouseLatLonText = latLonText;
+            emit mouseCoordinateChanged();
+        }
+    } else {
+        updateMouseCoordinateTexts(coordinate.latitude(), coordinate.longitude());
     }
-
-    MessageBus::instance()->send(QStringLiteral("map/hovered"), QVariantMap{
-        {QStringLiteral("latitude"), coordinate.latitude()},
-        {QStringLiteral("longitude"), coordinate.longitude()}
-    });
 }
 
 void MapPageStateController::handleMapHoverChanged(bool hovered)

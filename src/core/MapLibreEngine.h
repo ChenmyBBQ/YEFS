@@ -47,6 +47,10 @@ public:
     Q_INVOKABLE void updateLayerData(const QString& layerId, 
                                       const QJsonObject& geoJson) override;
 
+    // 高频绘制预览（基于 MapLibre Annotation API，避免 JSON 序列化）
+    Q_INVOKABLE void setPreviewAnnotation(const QVariantList& points);
+    Q_INVOKABLE void clearPreviewAnnotation();
+
     // 样式管理
     Q_INVOKABLE void setStyle(const QString& styleUrl) override;
     Q_INVOKABLE QString currentStyle() const override { return m_currentStyle; }
@@ -88,6 +92,9 @@ public slots:
     void onBearingChanged(double bearing);
     void onMapClicked(double latitude, double longitude);
 
+    // MessageBus
+    void onMessageBusEvent(const QString& topic, const QVariant& data);
+
 private:
     explicit MapLibreEngine(QObject* parent = nullptr);
     ~MapLibreEngine() override = default;
@@ -108,6 +115,9 @@ private:
 
     // 图层跟踪
     QHash<QString, QJsonObject> m_layers;
+
+    // 预览辅助线 Annotatio ID
+    quint32 m_previewAnnotationId = 0;
 };
 
 } // namespace YEFS

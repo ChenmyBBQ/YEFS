@@ -70,6 +70,19 @@ public:
                                                   double eLat, double eLng,
                                                   int segments = 64) const;
 
+    /// 高频预览：返回带有多边形点组的 QVariantList [[lat, lng], [lat, lng], ...]
+    Q_INVOKABLE QVariantList computeRectanglePoints(double centerLat, double centerLng, 
+                                                    double widthM, double heightM, 
+                                                    double rotationDeg = 0) const;
+    
+    Q_INVOKABLE QVariantList computeCirclePoints(double centerLat, double centerLng, 
+                                                 double radiusM, int segments = 64) const;
+    
+    Q_INVOKABLE QVariantList computeLinePoints(const QVariantList& points) const;
+
+    Q_INVOKABLE QVariantList computeSquarePoints(double centerLat, double centerLng, 
+                                                 double sizeM, double rotationDeg = 0) const;
+
 private:
     // 经纬度偏移工具 (Haversine 正/反算)
     struct GeoPoint { double lat; double lng; };

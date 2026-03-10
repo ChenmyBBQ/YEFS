@@ -23,6 +23,7 @@ class DrawingController : public QObject
     Q_PROPERTY(int pointCount READ pointCount NOTIFY pointsChanged)
     Q_PROPERTY(int requiredPoints READ requiredPoints NOTIFY currentShapeTypeChanged)
     Q_PROPERTY(QString statusText READ statusText NOTIFY statusTextChanged)
+    Q_PROPERTY(QVariantMap currentShapeInfo READ currentShapeInfo NOTIFY currentShapeInfoChanged)
 
 public:
     enum DrawingState {
@@ -41,6 +42,7 @@ public:
     int pointCount() const { return m_points.size(); }
     int requiredPoints() const;
     QString statusText() const { return m_statusText; }
+    QVariantMap currentShapeInfo() const { return m_currentShapeInfo; }
 
     /// 开始绘制指定形状
     Q_INVOKABLE void startDrawing(int shapeType);
@@ -73,6 +75,11 @@ signals:
     void currentShapeTypeChanged(int shapeType);
     void pointsChanged();
     void statusTextChanged();
+    void currentShapeInfoChanged(const QVariantMap& info);
+
+    /// 高频预览标注（绕过GeoJSON层）
+    void previewAnnotationSet(const QVariantList& points);
+    void previewAnnotationCleared();
 
     /// 预览数据更新
     void previewUpdated(const QJsonObject& geoJson);
@@ -111,6 +118,7 @@ private:
     bool         m_hasHoverPoint = false;
     QJsonObject  m_previewGeoJson;
     QString      m_statusText;
+    QVariantMap  m_currentShapeInfo;
 };
 
 #endif // DRAWINGCONTROLLER_H

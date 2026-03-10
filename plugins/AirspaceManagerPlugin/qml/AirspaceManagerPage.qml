@@ -22,7 +22,17 @@ Rectangle {
         active: DrawCtrl.drawingState !== 0  // 非 Idle 时显示
         sourceComponent: AirspaceToolbar {}
     }
-
+    // 绘制信息面板(绘制模式时显示在右侧)
+    Loader {
+        id: infoPanelLoader
+        anchors.right: parent.right
+        anchors.top: parent.top
+        anchors.topMargin: 80
+        anchors.rightMargin: 16
+        z: 99
+        active: DrawCtrl.drawingState === 1 // Drawing
+        source: "components/AirspaceInfoPanel.qml"
+    }
     // 编辑弹窗
     AirspaceEditDialog {
         id: editDialog

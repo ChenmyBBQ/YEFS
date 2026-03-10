@@ -72,7 +72,17 @@ bool AirspaceManagerPlugin::initialize(YEFS::PluginContext* context)
                         Q_ARG(QVariant, QVariant::fromValue(stateData)));
                 }
             });
-
+            // 高频预览标注（绕过GeoJSON），直接转给 MessageBus
+            connect(m_drawCtrl, &DrawingController::previewAnnotationSet, this, [msgBus](const QVariantList& points) {
+                QMetaObject::invokeMethod(msgBus, "publish",
+                    Q_ARG(QString, QStringLiteral("map/preview/annotation/set")),
+                    Q_ARG(QVariant, QVariant::fromValue(points)));
+            });
+            connect(m_drawCtrl, &DrawingController::previewAnnotationCleared, this, [msgBus]() {
+                QMetaObject::invokeMethod(msgBus, "publish",
+                    Q_ARG(QString, QStringLiteral("map/preview/annotation/clear")),
+                    Q_ARG(QVariant, QVariant()));
+            });
             // 绘制预览更新 → 实时同步到地图预览图层
             connect(m_drawCtrl, &DrawingController::previewUpdated,
                     this, [this](const QJsonObject& geoJson) {

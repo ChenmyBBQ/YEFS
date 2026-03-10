@@ -226,6 +226,31 @@ void DrawingController::clearHoverPoint()
 // 预览
 // ============================================================================
 
+static QVariantList extractCoordsFromGeoJson(const QJsonObject& geoJson) {
+    QVariantList res;
+    if (!geoJson.contains("geometry")) return res;
+    QJsonObject geom = geoJson["geometry"].toObject();
+    QString type = geom["type"].toString();
+    QJsonArray coords = geom["coordinates"].toArray();
+
+    auto addPoints = [&](const QJsonArray& arr) {
+        for (int i = 0; i < arr.size(); ++i) {
+            QJsonArray pt = arr[i].toArray(); // geojson: [lng, lat]
+            if (pt.size() >= 2) {
+                // setPreviewAnnotation 需要: [lat, lng]
+                res.append(QVariant(QVariantList{pt[1].toDouble(), pt[0].toDouble()}));
+            }
+        }
+    };
+
+    if (type == QLatin1String("Polygon")) {
+        if (!coords.isEmpty()) addPoints(coords[0].toArray()); // 外环
+    } else if (type == QLatin1String("LineString")) {
+        addPoints(coords);
+    }
+    return res;
+}
+
 void DrawingController::updatePreview()
 {
     QVariantList previewPoints = m_points;
@@ -233,21 +258,41 @@ void DrawingController::updatePreview()
         previewPoints.append(QVariant(m_hoverPoint));
 
     int n = previewPoints.size();
-    if (n == 0) { m_previewGeoJson = {}; return; }
-
+    if (n == 0) {
+        m_previewGeoJson = {};
+        emit previewAnnotationCleared();
+        return;
+    }
     auto lat = [&previewPoints](int i) { return previewPoints[i].toList()[0].toDouble(); };
     auto lng = [&previewPoints](int i) { return previewPoints[i].toList()[1].toDouble(); };
 
+    const int segs = m_hasHoverPoint ? 32 : 64;
+    QVariantMap shapeInfo;
+    shapeInfo["type"] = m_shapeType;
+    shapeInfo["pointCount"] = n;
+
     switch (m_shapeType) {
     case 0: // Rectangle
-        if (n >= 2) m_previewGeoJson = m_shapeGen->rectangleFromCorners(lat(0), lng(0), lat(1), lng(1));
-        break;
     case 1: // Square
-        if (n >= 2) m_previewGeoJson = m_shapeGen->rectangleFromCorners(lat(0), lng(0), lat(1), lng(1));
+        if (n >= 2) {
+            m_previewGeoJson = m_shapeGen->rectangleFromCorners(lat(0), lng(0), lat(1), lng(1));
+            shapeInfo["centerLat"] = (lat(0) + lat(1)) / 2.0;
+            shapeInfo["centerLng"] = (lng(0) + lng(1)) / 2.0;
+            shapeInfo["diagonalMeters"] = haversineDistance(lat(0), lng(0), lat(1), lng(1));
+        }
         break;
     case 2: // Circle
-        if (n >= 2) m_previewGeoJson = m_shapeGen->circleFromCenterEdge(lat(0), lng(0), lat(1), lng(1));
-        else        m_previewGeoJson = m_shapeGen->generateCircle(lat(0), lng(0), 100);
+        if (n >= 2) {
+            m_previewGeoJson = m_shapeGen->circleFromCenterEdge(lat(0), lng(0), lat(1), lng(1), segs);
+            shapeInfo["centerLat"] = lat(0);
+            shapeInfo["centerLng"] = lng(0);
+            shapeInfo["radiusMeters"] = haversineDistance(lat(0), lng(0), lat(1), lng(1));
+        } else {
+            m_previewGeoJson = m_shapeGen->generateCircle(lat(0), lng(0), 100, segs);
+            shapeInfo["centerLat"] = lat(0);
+            shapeInfo["centerLng"] = lng(0);
+            shapeInfo["radiusMeters"] = 100;
+        }
         break;
     case 3: // Polygon
         if (n >= 3) m_previewGeoJson = m_shapeGen->generatePolygon(previewPoints);
@@ -260,9 +305,12 @@ void DrawingController::updatePreview()
         if (n >= 3) {
             double oR = haversineDistance(lat(0), lng(0), lat(1), lng(1));
             double iR = haversineDistance(lat(0), lng(0), lat(2), lng(2));
-            m_previewGeoJson = m_shapeGen->generateRing(lat(0), lng(0), oR, iR);
+            m_previewGeoJson = m_shapeGen->generateRing(lat(0), lng(0), oR, iR, segs);
+            shapeInfo["outerRadius"] = oR;
+            shapeInfo["innerRadius"] = iR;
         } else if (n == 2) {
-            m_previewGeoJson = m_shapeGen->circleFromCenterEdge(lat(0), lng(0), lat(1), lng(1));
+            m_previewGeoJson = m_shapeGen->circleFromCenterEdge(lat(0), lng(0), lat(1), lng(1), segs);
+            shapeInfo["outerRadius"] = haversineDistance(lat(0), lng(0), lat(1), lng(1));
         }
         break;
     }
@@ -271,10 +319,13 @@ void DrawingController::updatePreview()
         if (n >= 4) {
             double sa = bearingTo(lat(0), lng(0), lat(2), lng(2));
             double ea = bearingTo(lat(0), lng(0), lat(3), lng(3));
-            m_previewGeoJson = m_shapeGen->generateArc(lat(0), lng(0), r, sa, ea);
+            m_previewGeoJson = m_shapeGen->generateArc(lat(0), lng(0), r, sa, ea, segs);
+            shapeInfo["startAngle"] = sa;
+            shapeInfo["endAngle"] = ea;
         } else if (n >= 2) {
-            m_previewGeoJson = m_shapeGen->circleFromCenterEdge(lat(0), lng(0), lat(1), lng(1));
+            m_previewGeoJson = m_shapeGen->circleFromCenterEdge(lat(0), lng(0), lat(1), lng(1), segs);
         }
+        shapeInfo["radius"] = r;
         break;
     }
     case 7: { // Sector
@@ -282,10 +333,13 @@ void DrawingController::updatePreview()
         if (n >= 4) {
             double sa = bearingTo(lat(0), lng(0), lat(2), lng(2));
             double ea = bearingTo(lat(0), lng(0), lat(3), lng(3));
-            m_previewGeoJson = m_shapeGen->generateSector(lat(0), lng(0), r, sa, ea);
+            m_previewGeoJson = m_shapeGen->generateSector(lat(0), lng(0), r, sa, ea, segs);
+            shapeInfo["startAngle"] = sa;
+            shapeInfo["endAngle"] = ea;
         } else if (n >= 2) {
-            m_previewGeoJson = m_shapeGen->circleFromCenterEdge(lat(0), lng(0), lat(1), lng(1));
+            m_previewGeoJson = m_shapeGen->circleFromCenterEdge(lat(0), lng(0), lat(1), lng(1), segs);
         }
+        shapeInfo["radius"] = r;
         break;
     }
     case 8: { // SectorRing
@@ -294,20 +348,40 @@ void DrawingController::updatePreview()
             double iR = haversineDistance(lat(0), lng(0), lat(2), lng(2));
             double sa = bearingTo(lat(0), lng(0), lat(3), lng(3));
             double ea = bearingTo(lat(0), lng(0), lat(4), lng(4));
-            m_previewGeoJson = m_shapeGen->generateSectorRing(lat(0), lng(0), oR, iR, sa, ea);
+            m_previewGeoJson = m_shapeGen->generateSectorRing(lat(0), lng(0), oR, iR, sa, ea, segs);
+            shapeInfo["outerRadius"] = oR;
+            shapeInfo["innerRadius"] = iR;
+            shapeInfo["startAngle"] = sa;
+            shapeInfo["endAngle"] = ea;
         } else if (n >= 3) {
             double oR = haversineDistance(lat(0), lng(0), lat(1), lng(1));
             double iR = haversineDistance(lat(0), lng(0), lat(2), lng(2));
-            m_previewGeoJson = m_shapeGen->generateRing(lat(0), lng(0), oR, iR);
+            m_previewGeoJson = m_shapeGen->generateRing(lat(0), lng(0), oR, iR, segs);
+            shapeInfo["outerRadius"] = oR;
+            shapeInfo["innerRadius"] = iR;
         } else if (n >= 2) {
-            m_previewGeoJson = m_shapeGen->circleFromCenterEdge(lat(0), lng(0), lat(1), lng(1));
+            m_previewGeoJson = m_shapeGen->circleFromCenterEdge(lat(0), lng(0), lat(1), lng(1), segs);
+            shapeInfo["outerRadius"] = haversineDistance(lat(0), lng(0), lat(1), lng(1));
         }
         break;
     }
     default: break;
     }
 
-    emit previewUpdated(m_previewGeoJson);
+    if (m_currentShapeInfo != shapeInfo) {
+        m_currentShapeInfo = shapeInfo;
+        emit currentShapeInfoChanged(shapeInfo);
+    }
+
+    // hover 状态只走内存高频渲染，不抛出 QML 事件更新普通 JSON 图层
+    if (m_state == Drawing && m_hasHoverPoint) {
+        QVariantList annPoints = extractCoordsFromGeoJson(m_previewGeoJson);
+        emit previewAnnotationSet(annPoints);
+    } else {
+        // 完成绘制或右键取消等，抛出让 QML 的常规 GeoJSON 图层承接，并清除快速渲染层
+        emit previewAnnotationCleared();
+        emit previewUpdated(m_previewGeoJson);
+    }
 }
 
 void DrawingController::setStatusText(const QString& text)

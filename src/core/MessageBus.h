@@ -60,6 +60,8 @@ namespace Topics {
     constexpr const char* MAP_LAYER_ADDED = "map/layer/added";
     constexpr const char* MAP_LAYER_REMOVED = "map/layer/removed";
     constexpr const char* MAP_STYLE_CHANGED = "map/style/changed";
+    constexpr const char* MAP_PREVIEW_ANNOTATION_SET = "map/preview/annotation/set";
+    constexpr const char* MAP_PREVIEW_ANNOTATION_CLEAR = "map/preview/annotation/clear";
 
     // 插件相关
     constexpr const char* PLUGIN_LOADED = "plugin/loaded";

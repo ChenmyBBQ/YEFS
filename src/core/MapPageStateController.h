@@ -5,6 +5,7 @@
 #include <QQmlEngine>
 #include <QPointF>
 #include <QVariantList>
+#include <QTimer>
 
 namespace YEFS {
 
@@ -85,8 +86,13 @@ private:
 
 private slots:
     void onBusMessage(const QString& topic, const QVariant& data);
+    void processHoverUpdate();
 
 private:
+    QTimer*  m_hoverTimer{nullptr};
+    QPointF  m_pendingHoverPos;
+    QPointF  m_lastProcessedHoverPos;
+
     QString m_mouseLatLonText;
     QString m_mouseUtmText;
     QString m_mouseMgrsText;

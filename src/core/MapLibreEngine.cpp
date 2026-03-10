@@ -42,6 +42,18 @@ MapLibreEngine::MapLibreEngine(QObject* parent)
     m_styles["MapTiler Satellite"] = "https://api.maptiler.com/maps/satellite/style.json";
 
     m_currentStyle = m_styles["OSM Demo"];
+
+    // 监听消息总线，跨动态库解耦
+    connect(MessageBus::instance(), &MessageBus::message, this, &MapLibreEngine::onMessageBusEvent);
+}
+
+void MapLibreEngine::onMessageBusEvent(const QString& topic, const QVariant& data)
+{
+    if (topic == Topics::MAP_PREVIEW_ANNOTATION_SET) {
+        setPreviewAnnotation(data.toList());
+    } else if (topic == Topics::MAP_PREVIEW_ANNOTATION_CLEAR) {
+        clearPreviewAnnotation();
+    }
 }
 
 MapLibreEngine* MapLibreEngine::instance()
@@ -318,6 +330,52 @@ void MapLibreEngine::onMapClicked(double latitude, double longitude)
     data["latitude"] = latitude;
     data["longitude"] = longitude;
     MessageBus::instance()->publish(Topics::MAP_CLICKED, data);
+}
+
+void MapLibreEngine::setPreviewAnnotation(const QVariantList& points)
+{
+    auto* map = getNativeMap(m_mapItem);
+    if (!map) return;
+
+    QMapLibre::Coordinates coordinates;
+    for (const QVariant& pt : points) {
+        QVariantList list = pt.toList();
+        if (list.size() >= 2) {
+            // 注意：QMapLibre::Coordinate 是 QPair 经纬度
+            // 但是具体是 (lat, lng) 还是 (lng, lat)？
+            // 看类型没注释，通常可能是 (lat, lng) 如果是 QGeoCoordinate，但这里是 QPair。
+            // 之前的 arcCoordinates 的时候 JSON 是 { lng, lat }
+            // 在 QMapLibre SDK 里 Coordinate 是 { latitude, longitude } 等等？
+            // 等等看下，QMapLibre::Coordinate 如果直接是 double, double，应该是 {lat, lon} 或 {lon, lat} 按照规范？
+            coordinates.append(QMapLibre::Coordinate(list[0].toDouble(), list[1].toDouble()));
+        }
+    }
+
+    QMapLibre::CoordinatesCollection collection;
+    collection.append(coordinates);
+
+    QMapLibre::CoordinatesCollections collections;
+    collections.append(collection);
+
+    QMapLibre::ShapeAnnotationGeometry geometry(QMapLibre::ShapeAnnotationGeometry::LineStringType, collections);
+    QMapLibre::LineAnnotation lineAnn(geometry, 1.0f, 2.0f, QColor("#ff8833"));
+
+    if (m_previewAnnotationId != 0) {
+        map->updateAnnotation(m_previewAnnotationId, QVariant::fromValue(lineAnn));
+    } else {
+        m_previewAnnotationId = map->addAnnotation(QVariant::fromValue(lineAnn));
+    }
+}
+
+void MapLibreEngine::clearPreviewAnnotation()
+{
+    if (m_previewAnnotationId != 0) {
+        auto* map = getNativeMap(m_mapItem);
+        if (map) {
+            map->removeAnnotation(m_previewAnnotationId);
+        }
+        m_previewAnnotationId = 0;
+    }
 }
 
 } // namespace YEFS

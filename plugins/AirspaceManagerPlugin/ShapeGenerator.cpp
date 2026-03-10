@@ -287,3 +287,62 @@ QJsonObject ShapeGenerator::circleFromCenterEdge(double cLat, double cLng,
     double radius = distanceBetween(cLat, cLng, eLat, eLng);
     return generateCircle(cLat, cLng, radius, segments);
 }
+
+// ============================================================================
+// 高频预览用，返回纯坐标点集避免 JSON 操作
+// 返回结果形式: [[lat, lng], [lat, lng], ...]
+// ============================================================================
+
+QVariantList ShapeGenerator::computeRectanglePoints(double centerLat, double centerLng, 
+                                                    double widthM, double heightM, 
+                                                    double rotationDeg) const
+{
+    double halfW = widthM  / 2.0;
+    double halfH = heightM / 2.0;
+
+    struct Corner { double bearingBase; double dist; };
+    double diag = std::sqrt(halfW * halfW + halfH * halfH);
+    double angleBase = qRadiansToDegrees(std::atan2(halfW, halfH)); 
+
+    Corner corners[4] = {
+        { angleBase,         diag },  
+        { 180 - angleBase,   diag },  
+        { 180 + angleBase,   diag },  
+        { 360 - angleBase,   diag },  
+    };
+
+    QVariantList ring;
+    for (auto& c : corners) {
+        double bearing = std::fmod(c.bearingBase + rotationDeg + 360.0, 360.0);
+        auto pt = destinationPoint(centerLat, centerLng, bearing, c.dist);
+        ring.append(QVariant::fromValue(QVariantList{ pt.lat, pt.lng }));
+    }
+    if (!ring.isEmpty()) {
+        ring.append(ring.first()); // 闭合
+    }
+    return ring;
+}
+
+QVariantList ShapeGenerator::computeCirclePoints(double centerLat, double centerLng, 
+                                                 double radiusM, int segments) const
+{
+    QVariantList ring;
+    double step = 360.0 / segments;
+    for (int i = 0; i <= segments; ++i) {
+        double angle = step * i;
+        auto pt = destinationPoint(centerLat, centerLng, angle, radiusM);
+        ring.append(QVariant::fromValue(QVariantList{ pt.lat, pt.lng }));
+    }
+    return ring;
+}
+
+QVariantList ShapeGenerator::computeLinePoints(const QVariantList& points) const
+{
+    return points;
+}
+
+QVariantList ShapeGenerator::computeSquarePoints(double centerLat, double centerLng, 
+                                                 double sizeM, double rotationDeg) const
+{
+    return computeRectanglePoints(centerLat, centerLng, sizeM, sizeM, rotationDeg);
+}

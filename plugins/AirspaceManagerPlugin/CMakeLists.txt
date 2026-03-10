@@ -52,6 +52,7 @@ qt_add_qml_module(${PROJECT_NAME}
         qml/AirspaceSettings.qml
         qml/components/ShapePropertyEditor.qml
         qml/components/DataPropertyEditor.qml
+        qml/components/AirspaceInfoPanel.qml
     NO_PLUGIN
     NO_GENERATE_PLUGIN_SOURCE
 )
