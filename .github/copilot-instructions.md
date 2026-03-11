@@ -1,38 +1,26 @@
-# YEFS（Qt6/QML GIS 地面站）Copilot 指南
+# YEFS Copilot 主引导
 
-## 硬性规则（必须遵守）
-1. 所有会话输出必须使用中文（含解释、计划、报错分析、提交说明等）。
-2. 编写/重构 QML 页面时，优先使用 HuskarUI（`import HuskarUI.Basic`，优先选用 `Hus*` 组件）。
-3. 编写/重构 QML 页面时，交互/布局/组件用法优先参考 HuskarUI 的 gallery 示例。
-4. 提交说明必须是中文，且要简洁明了地描述变更内容和目的。
+## 规则入口
+- 整体架构先看 .github/copilot/architecture.md。
+- 遇到异常、BUG与代码问题排查看 .github/copilot/workflow-rules.md。
+- C++开发与核心逻辑编程规范看 .github/copilot/cpp-rules.md。
+- Qt/QML 界面与交互相关任务看 .github/copilot/qml-rules.md。
+- Git 提交、推送与变更保护看 .github/copilot/git-rules.md。
+- 模块与主框架说明文档维护看 .github/copilot/readme-maintenance.md。
+- React 与 Tailwind 相关任务看 .github/copilot/frontend-rules.md。
+- Go 与 Node.js 相关任务看 .github/copilot/backend-rules.md。
+- 测试与验证要求看 .github/copilot/testing-policy.md。
 
-## 入口与运行链路（可从源码验证）
-- 启动入口：`src/cpp/main.cpp` → 创建 `YEFS::Application` → `initialize()` → `run()` 加载 `qrc:/YEFSApp/qml/Main.qml`。
-- 构建输出/运行：可执行文件位于 `out/<BuildType>/bin/YEFS`，直接运行该二进制。
+## 硬性规则
+1. 所有会话输出必须使用中文，包括解释、计划、提交说明、错误分析与代码注释。
+2. 当前主工程是 Qt6/QML/C++ 桌面 GIS 应用；新增规则不得反向破坏这一主架构。
 
-## 构建与部署（可从 CMake 验证）
-```bash
-cmake -B build -G Ninja -DCMAKE_BUILD_TYPE=RelWithDebInfo
-cmake --build build
-./out/RelWithDebInfo/bin/YEFS
-```
-- 顶层 `CMakeLists.txt` 统一设置输出到 `out/<BuildType>/bin`。
-- `src/CMakeLists.txt` 在 POST_BUILD 阶段复制运行所需的 QML 模块/插件到 `out/<BuildType>/bin`：
-    - HuskarUI QML 模块到 `bin/HuskarUI/*`，并将 Basic/Impl 插件放入对应模块目录。
-    - MapLibre QML 模块到 `bin/MapLibre/*`，GeoServices 插件到 `bin/geoservices/`。
-
-## QML 结构与导航（可从 QML 验证）
-- 导航骨架：`src/qml/Main.qml`（HusWindow + HusMenu + Loader）。
-- 菜单/路由：`src/qml/YefsGlobal.qml` 定义 `menus/options`，菜单项 `source` 指向 `src/qml/Home/*.qml`。
-- 页面组织：主页面在 `src/qml/Home/`（如 MapPage/SettingsPage/AboutPage），设置子面板在 `src/qml/Settings/`。
-
-## 核心 QML 单例与用法（可从头文件验证）
-在 QML 中先 `import YEFSApp`，然后直接调用（这些类均为 `QML_SINGLETON`）：
-- `MessageBus.send(topic, data)`；主题常量在 `src/core/MessageBus.h` 的 `YEFS::Topics::*`。
-- `SettingsManager.getValue(category, key, default)` / `setValue(...)`；配置文件位置为 `QStandardPaths::AppDataLocation/settings.json`，可用 `SettingsManager.settingsFilePath()` 获取。
-- `PluginManager.loadAllPlugins()` / `getPluginQmlEntry(id)` / `getPluginSettingsPage(id)`。
-- `UnitManager.*`：单位格式化/换算（如 `formatAltitude`、`convert`）。
-
-## 插件机制（可从源码验证）
-- 接口：实现 `src/core/IPlugin.h`（必须实现 `initialize/shutdown/id/name/version/pluginType`）。
-- 扫描目录（Linux）：`<bin>/plugins`、`<bin>/../plugins`、`~/.local/share/YEFS/plugins`（见 `PluginManager` 构造与 `scanPlugins()`）。
+## 执行原则
+- 修改前先确认任务适用哪一类规则文件，避免把 Web 规范误用于 QML 主工程。
+- 分析问题、定位根因与修复流程，以 workflow-rules.md 为优先依据。
+- 涉及 C++ 核心逻辑、内存管理、对象生命周期时，以 cpp-rules.md 为优先依据。
+- 涉及架构、模块边界、插件扩展、设置持久化时，以 architecture.md 为优先依据。
+- 涉及 QML 页面、导航、单例调用与 HuskarUI 组件时，以 qml-rules.md 为优先依据。
+- 涉及提交、推送、历史改写与工作区保护时，以 git-rules.md 为优先依据。
+- 涉及模块说明文档或主框架说明文档维护时，以 readme-maintenance.md 为优先依据。
+- 涉及验证与回归说明时，遵守 testing-policy.md。
