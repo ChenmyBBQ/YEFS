@@ -118,15 +118,32 @@ void MapPageStateController::handleMapTap(const QPointF& position)
     }
 
     if (m_selectedShapeType >= 0 && !m_drawingActive) {
-        // 首次点击：启动绘制流程，等待插件回复 drawing-state active=true 后再接收坐标
+        // 首次有效地图点击：启动绘制流程，并把本次点击记为首个控制点。
+        // 工具栏、面板等覆盖层点击已在 MapInteractionLayer 中被拦截。
         MessageBus::instance()->send(QStringLiteral("airspace-manager/draw"), QVariantMap{
             {QStringLiteral("shapeType"), m_selectedShapeType}
         });
+        MapLibreEngine::instance()->onMapClicked(coordinate.latitude(), coordinate.longitude());
         return;
     }
 
     if (m_drawingActive) {
         MapLibreEngine::instance()->onMapClicked(coordinate.latitude(), coordinate.longitude());
+    }
+}
+
+void MapPageStateController::handleMapDoubleTap(const QPointF& position)
+{
+    const QGeoCoordinate coordinate = coordinateFromScreenPoint(position);
+    if (!coordinate.isValid()) {
+        return;
+    }
+
+    if (m_drawingActive) {
+        QVariantMap data;
+        data["latitude"] = coordinate.latitude();
+        data["longitude"] = coordinate.longitude();
+        MessageBus::instance()->publish(Topics::MAP_DOUBLE_CLICKED, data);
     }
 }
 

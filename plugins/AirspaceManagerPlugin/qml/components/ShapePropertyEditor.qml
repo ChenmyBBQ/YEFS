@@ -1,15 +1,20 @@
 import QtQuick
 import QtQuick.Layouts
 import HuskarUI.Basic
-import AirspaceManager 1.0
 
 /**
  * 图形属性编辑器
- * 编辑填充颜色/透明度、边框颜色/宽度/样式等
+ * 编辑填充颜色、透明度、边框颜色、宽度与样式。
  */
 ColumnLayout {
     id: root
     spacing: 12
+
+    readonly property int labelWidth: 82
+    readonly property int controlHeight: 34
+    readonly property int sliderHeight: 30
+    readonly property int valueWidth: 42
+    readonly property color textColor: '#111111'
 
     property var styleData: ({
         "fill-color": "#3388ff",
@@ -40,84 +45,123 @@ ColumnLayout {
 
     // 填充颜色
     RowLayout {
-        spacing: 8
-        HusText { text: qsTr('填充颜色'); Layout.preferredWidth: 80 }
+        Layout.fillWidth: true
+        spacing: 10
+        HusText { text: qsTr('填充颜色'); Layout.preferredWidth: root.labelWidth; font.pixelSize: 12; color: root.textColor }
         HusColorPicker {
             id: fillColorPicker
+            Layout.fillWidth: true
+            Layout.preferredHeight: root.controlHeight
+
+            contentItem: Rectangle {
+                anchors.fill: parent
+                anchors.margins: 2
+                implicitHeight: root.controlHeight - 4
+                color: fillColorPicker.value || "#3388ff"
+                radius: HusTheme.Primary.radiusPrimary
+                border.width: 1
+                border.color: HusTheme.Primary.colorBorder
+            }
             defaultValue: "#3388ff"
             onChange: function(color) {
-                styleData["fill-color"] = color
-                root.styleChanged(styleData)
+                root.styleData["fill-color"] = color
+                root.styleChanged(root.styleData)
             }
         }
     }
 
     // 填充透明度
     RowLayout {
-        spacing: 8
-        HusText { text: qsTr('填充透明度'); Layout.preferredWidth: 80 }
+        Layout.fillWidth: true
+        spacing: 10
+        HusText { text: qsTr('填充透明度'); Layout.preferredWidth: root.labelWidth; font.pixelSize: 12; color: root.textColor }
         HusSlider {
             id: fillOpacitySlider
             Layout.fillWidth: true
-            from: 0; to: 100; value: 30
+            Layout.preferredHeight: root.sliderHeight
+            Layout.alignment: Qt.AlignVCenter
+            min: 0; max: 100; value: 30
             stepSize: 5
-            onValueChanged: {
-                styleData["fill-opacity"] = value / 100.0
-                root.styleChanged(styleData)
+            onCurrentValueChanged: {
+                if (currentValue !== undefined) {
+                    root.styleData["fill-opacity"] = currentValue / 100.0
+                    root.styleChanged(root.styleData)
+                }
             }
         }
-        HusText { text: fillOpacitySlider.value + '%'; Layout.preferredWidth: 40 }
+        HusText { text: Math.round(fillOpacitySlider.currentValue || 0) + '%'; Layout.preferredWidth: root.valueWidth; font.pixelSize: 12; horizontalAlignment: Text.AlignRight; color: root.textColor; Layout.alignment: Qt.AlignVCenter }
     }
 
     HusDivider {}
 
     // 边框颜色
     RowLayout {
-        spacing: 8
-        HusText { text: qsTr('边框颜色'); Layout.preferredWidth: 80 }
+        Layout.fillWidth: true
+        spacing: 10
+        HusText { text: qsTr('边框颜色'); Layout.preferredWidth: root.labelWidth; font.pixelSize: 12; color: root.textColor }
         HusColorPicker {
             id: lineColorPicker
+            Layout.fillWidth: true
+            Layout.preferredHeight: root.controlHeight
+
+            contentItem: Rectangle {
+                anchors.fill: parent
+                anchors.margins: 2
+                implicitHeight: root.controlHeight - 4
+                color: lineColorPicker.value || "#3388ff"
+                radius: HusTheme.Primary.radiusPrimary
+                border.width: 1
+                border.color: HusTheme.Primary.colorBorder
+            }
             defaultValue: "#3388ff"
             onChange: function(color) {
-                styleData["line-color"] = color
-                root.styleChanged(styleData)
+                root.styleData["line-color"] = color
+                root.styleChanged(root.styleData)
             }
         }
     }
 
     // 边框宽度
     RowLayout {
-        spacing: 8
-        HusText { text: qsTr('边框宽度'); Layout.preferredWidth: 80 }
+        Layout.fillWidth: true
+        spacing: 10
+        HusText { text: qsTr('边框宽度'); Layout.preferredWidth: root.labelWidth; font.pixelSize: 12; color: root.textColor }
         HusSlider {
             id: lineWidthSlider
             Layout.fillWidth: true
-            from: 1; to: 10; value: 2
+            Layout.preferredHeight: root.sliderHeight
+            Layout.alignment: Qt.AlignVCenter
+            min: 1; max: 10; value: 2
             stepSize: 1
-            onValueChanged: {
-                styleData["line-width"] = value
-                root.styleChanged(styleData)
+            onCurrentValueChanged: {
+                if (currentValue !== undefined) {
+                    root.styleData["line-width"] = currentValue
+                    root.styleChanged(root.styleData)
+                }
             }
         }
-        HusText { text: lineWidthSlider.value + 'px'; Layout.preferredWidth: 40 }
+        HusText { text: Math.round(lineWidthSlider.currentValue || 0) + 'px'; Layout.preferredWidth: root.valueWidth; font.pixelSize: 12; horizontalAlignment: Text.AlignRight; color: root.textColor; Layout.alignment: Qt.AlignVCenter }
     }
 
     // 边框样式
     RowLayout {
-        spacing: 8
-        HusText { text: qsTr('边框样式'); Layout.preferredWidth: 80 }
+        Layout.fillWidth: true
+        spacing: 10
+        HusText { text: qsTr('边框样式'); Layout.preferredWidth: root.labelWidth; font.pixelSize: 12; color: root.textColor }
         HusSelect {
             id: lineStyleSelect
             Layout.fillWidth: true
+            Layout.preferredHeight: root.controlHeight
+
             model: [qsTr('实线'), qsTr('虚线'), qsTr('点线')]
             currentIndex: 0
             onCurrentIndexChanged: {
                 switch (currentIndex) {
-                case 0: styleData["line-dasharray"] = []; break
-                case 1: styleData["line-dasharray"] = [4, 4]; break
-                case 2: styleData["line-dasharray"] = [1, 4]; break
+                case 0: root.styleData["line-dasharray"] = []; break
+                case 1: root.styleData["line-dasharray"] = [4, 4]; break
+                case 2: root.styleData["line-dasharray"] = [1, 4]; break
                 }
-                root.styleChanged(styleData)
+                root.styleChanged(root.styleData)
             }
         }
     }

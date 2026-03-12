@@ -57,6 +57,7 @@ namespace Topics {
     constexpr const char* MAP_CENTER_CHANGED = "map/center/changed";
     constexpr const char* MAP_ZOOM_CHANGED = "map/zoom/changed";
     constexpr const char* MAP_CLICKED = "map/clicked";
+    constexpr const char* MAP_DOUBLE_CLICKED = "map/doubleClicked";
     constexpr const char* MAP_LAYER_ADDED = "map/layer/added";
     constexpr const char* MAP_LAYER_REMOVED = "map/layer/removed";
     constexpr const char* MAP_STYLE_CHANGED = "map/style/changed";

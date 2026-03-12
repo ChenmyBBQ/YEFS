@@ -1,135 +1,392 @@
 import QtQuick
 import QtQuick.Layouts
+import QtQuick.Controls
 import HuskarUI.Basic
+import AirspaceManager 1.0
 import YEFSApp
 
 HusCard {
     id: root
-    width: 260
-    
-    // 只在绘制中且至少有1个点时显示
-    visible: DrawCtrl.drawingState === 1 && DrawCtrl.pointCount > 0
+    width: 320
+    height: 780
+
+    visible: (DrawCtrl.drawingState === DrawCtrl.Drawing || DrawCtrl.drawingState === DrawCtrl.Editing)
+             && DrawCtrl.pointCount > 0
 
     property var shapeInfo: DrawCtrl.currentShapeInfo || {}
     property int shapeType: shapeInfo.type !== undefined ? shapeInfo.type : -1
     property int pointCount: shapeInfo.pointCount !== undefined ? shapeInfo.pointCount : 0
+    readonly property string shapeName: root.getShapeName(root.shapeType)
+    readonly property int infoLabelWidth: 92
+    readonly property int sectionInnerMargin: 10
+    readonly property int sectionSpacing: 8
+    readonly property int sectionHeaderHeight: 34
+    readonly property int sectionToggleButtonSize: 28
+    readonly property color sectionCardColor: HusThemeFunctions.alpha(HusTheme.Primary.colorBgContainer, 0.98)
+    readonly property color sectionHeaderColor: '#6ea6d8'
+    readonly property color sectionHeaderTextColor: '#ffffff'
+    readonly property color contentTextColor: '#111111'
+    property bool styleExpanded: true
+    property bool dataExpanded: true
+    property bool detailExpanded: false
+
+    function triggerSave(complete) {
+        let styleJson = shapeEditor.getStyleJson()
+        let propsJson = dataEditor.getPropertiesJson()
+        
+        let uuid = DrawCtrl.saveAirspace(
+            dataEditor.airspaceName || '未命名空域_' + Date.now(),
+            styleJson,
+            propsJson
+        )
+        if (uuid) {
+            let data = AirspaceModel.getAirspace(uuid)
+            if (data.id) {
+                let geoJson = JSON.parse(data.geoJson)
+                let style = JSON.parse(data.styleJson || '{}')
+                MapLibreEngine.addGeoJSONLayer('airspace-' + data.id, geoJson, style)
+            }
+        }
+        if (complete) {
+            DrawCtrl.cancel()
+        }
+    }
 
     ColumnLayout {
         anchors.fill: parent
         anchors.margins: 12
-        spacing: 8
+        spacing: 12
 
-        HusText {
-            text: "图形信息"
-            font.bold: true
-            font.pixelSize: 14
-            color: HusTheme.primaryColor
-            Layout.bottomMargin: 4
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 10
+
+            HusText {
+                text: '空域名称'
+                Layout.preferredWidth: 60
+                font.pixelSize: 12
+                color: root.contentTextColor
+            }
+
+            HusInput {
+                id: airspaceNameInput
+                Layout.fillWidth: true
+                Layout.preferredHeight: 34
+
+                placeholderText: '请输入空域名称'
+                text: dataEditor.airspaceName
+                onTextChanged: {
+                    if (dataEditor.airspaceName !== text) {
+                        dataEditor.airspaceName = text
+                        dataEditor.dataChanged()
+                    }
+                }
+            }
+
+            HusText {
+                id: nameTag
+                text: root.shapeName
+                font.pixelSize: 12
+                color: root.contentTextColor
+                Layout.alignment: Qt.AlignVCenter
+            }
         }
 
-        HusText {
-            text: getShapeName(shapeType) + " (" + pointCount + " 个点)"
-            color: HusTheme.textColor
-            font.pixelSize: 13
-        }
+        ScrollView {
+            id: scrollArea
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+            clip: true
+            LayoutMirroring.enabled: false
+            LayoutMirroring.childrenInherit: false
+            contentWidth: availableWidth
+            contentHeight: contentColumn.implicitHeight + 16
+            ScrollBar.vertical: HusScrollBar {
+                policy: ScrollBar.AsNeeded
+            }
+
+            ColumnLayout {
+                id: contentColumn
+                width: Math.max(0, scrollArea.availableWidth - 10)
+                spacing: root.sectionSpacing
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: styleSection.implicitHeight + 20
+                    radius: HusTheme.Primary.radiusPrimary
+                    color: root.sectionCardColor
+                    border.color: 'transparent'
+
+                    ColumnLayout {
+                        id: styleSection
+                        anchors.fill: parent
+                        anchors.margins: root.sectionInnerMargin
+                        spacing: root.sectionSpacing
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            implicitHeight: root.sectionHeaderHeight
+                            radius: HusTheme.Primary.radiusPrimary
+                            color: root.sectionHeaderColor
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 12
+                                anchors.rightMargin: 4
+                                spacing: 8
+
+                                HusText {
+                                    text: '图形属性'
+                                    font.pixelSize: 13
+                                    font.bold: true
+                                    color: root.sectionHeaderTextColor
+                                }
+
+                                Item { Layout.fillWidth: true }
+
+                                HusIconButton {
+                                    width: root.sectionToggleButtonSize
+                                    height: root.sectionToggleButtonSize
+                                    type: HusButton.Type_Text
+                                    iconSource: root.styleExpanded ? HusIcon.UpOutlined : HusIcon.DownOutlined
+                                    iconSize: 14
+                                    colorText: root.sectionHeaderTextColor
+                                    colorIcon: root.sectionHeaderTextColor
+                                    onClicked: root.styleExpanded = !root.styleExpanded
+                                }
+                            }
+                        }
+
+                        ShapePropertyEditor {
+                            id: shapeEditor
+                            visible: root.styleExpanded
+                            Layout.fillWidth: true
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: dataSection.implicitHeight + 20
+                    radius: HusTheme.Primary.radiusPrimary
+                    color: root.sectionCardColor
+                    border.color: 'transparent'
+
+                    ColumnLayout {
+                        id: dataSection
+                        anchors.fill: parent
+                        anchors.margins: root.sectionInnerMargin
+                        spacing: root.sectionSpacing
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            implicitHeight: root.sectionHeaderHeight
+                            radius: HusTheme.Primary.radiusPrimary
+                            color: root.sectionHeaderColor
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 12
+                                anchors.rightMargin: 4
+                                spacing: 8
+
+                                HusText {
+                                    text: '数据属性'
+                                    font.pixelSize: 13
+                                    font.bold: true
+                                    color: root.sectionHeaderTextColor
+                                }
+
+                                Item { Layout.fillWidth: true }
+
+                                HusIconButton {
+                                    width: root.sectionToggleButtonSize
+                                    height: root.sectionToggleButtonSize
+                                    type: HusButton.Type_Text
+                                    iconSource: root.dataExpanded ? HusIcon.UpOutlined : HusIcon.DownOutlined
+                                    iconSize: 14
+                                    colorText: root.sectionHeaderTextColor
+                                    colorIcon: root.sectionHeaderTextColor
+                                    onClicked: root.dataExpanded = !root.dataExpanded
+                                }
+                            }
+                        }
+
+                        DataPropertyEditor {
+                            id: dataEditor
+                            visible: root.dataExpanded
+                            Layout.fillWidth: true
+                            showNameField: false
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: detailHeader.implicitHeight + (root.detailExpanded ? detailSection.implicitHeight + 30 : 20)
+                    radius: HusTheme.Primary.radiusPrimary
+                    color: root.sectionCardColor
+                    border.color: 'transparent'
+
+                    ColumnLayout {
+                        id: detailSection
+                        anchors.fill: parent
+                        anchors.margins: root.sectionInnerMargin
+                        spacing: root.sectionSpacing
+
+                        Rectangle {
+                            id: detailHeader
+                            Layout.fillWidth: true
+                            implicitHeight: root.sectionHeaderHeight
+                            radius: HusTheme.Primary.radiusPrimary
+                            color: root.sectionHeaderColor
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 12
+                                anchors.rightMargin: 4
+                                spacing: 8
+
+                                HusText {
+                                    text: '实际经纬度数据'
+                                    font.pixelSize: 13
+                                    font.bold: true
+                                    color: root.sectionHeaderTextColor
+                                }
+
+                                Item { Layout.fillWidth: true }
+
+                                HusIconButton {
+                                    width: root.sectionToggleButtonSize
+                                    height: root.sectionToggleButtonSize
+                                    type: HusButton.Type_Text
+                                    iconSource: root.detailExpanded ? HusIcon.UpOutlined : HusIcon.DownOutlined
+                                    iconSize: 14
+                                    colorText: root.sectionHeaderTextColor
+                                    colorIcon: root.sectionHeaderTextColor
+                                    onClicked: root.detailExpanded = !root.detailExpanded
+                                }
+                            }
+                        }
+
+                        ColumnLayout {
+                            visible: root.detailExpanded
+                            Layout.fillWidth: true
+                            spacing: 10
+
+                                GridLayout {
+                                    id: geometryGrid
+                                    visible: (root.shapeType === 0 || root.shapeType === 1)
+                                             && root.shapeInfo.diagonalMeters !== undefined
+                                    columns: 2
+                                    rowSpacing: 8
+                                    columnSpacing: 10
+                                    HusText { text: '中心纬度'; color: root.contentTextColor; Layout.preferredWidth: root.infoLabelWidth }
+                                    HusText { text: Number(root.shapeInfo.centerLat || 0).toFixed(6) + '°'; color: root.contentTextColor }
+                                    HusText { text: '中心经度'; color: root.contentTextColor; Layout.preferredWidth: root.infoLabelWidth }
+                                    HusText { text: Number(root.shapeInfo.centerLng || 0).toFixed(6) + '°'; color: root.contentTextColor }
+                                    HusText { text: '对角距离'; color: root.contentTextColor; Layout.preferredWidth: root.infoLabelWidth }
+                                    HusText { text: UnitManager.formatDistance(root.shapeInfo.diagonalMeters || 0); color: root.contentTextColor }
+                                }
+
+                                GridLayout {
+                                    id: circleGrid
+                                    visible: root.shapeType === 2 && root.shapeInfo.radiusMeters !== undefined
+                                    columns: 2
+                                    rowSpacing: 8
+                                    columnSpacing: 10
+                                    HusText { text: '圆心纬度'; color: root.contentTextColor; Layout.preferredWidth: root.infoLabelWidth }
+                                    HusText { text: Number(root.shapeInfo.centerLat || 0).toFixed(6) + '°'; color: root.contentTextColor }
+                                    HusText { text: '圆心经度'; color: root.contentTextColor; Layout.preferredWidth: root.infoLabelWidth }
+                                    HusText { text: Number(root.shapeInfo.centerLng || 0).toFixed(6) + '°'; color: root.contentTextColor }
+                                    HusText { text: '半径'; color: root.contentTextColor; Layout.preferredWidth: root.infoLabelWidth }
+                                    HusText { text: UnitManager.formatDistance(root.shapeInfo.radiusMeters || 0); color: root.contentTextColor }
+                                }
+
+                                GridLayout {
+                                    id: pointGrid
+                                    visible: root.shapeType === 3 || root.shapeType === 4
+                                    columns: 2
+                                    rowSpacing: 8
+                                    columnSpacing: 10
+                                    HusText { text: '当前节点'; color: root.contentTextColor; Layout.preferredWidth: root.infoLabelWidth }
+                                    HusText { text: root.pointCount + ' 个点'; color: root.contentTextColor }
+                                }
+
+                                GridLayout {
+                                    id: ringGrid
+                                    visible: (root.shapeType === 5 || root.shapeType === 8)
+                                             && root.shapeInfo.outerRadius !== undefined
+                                    columns: 2
+                                    rowSpacing: 8
+                                    columnSpacing: 10
+                                    HusText { text: '外半径'; color: root.contentTextColor; Layout.preferredWidth: root.infoLabelWidth }
+                                    HusText { text: UnitManager.formatDistance(root.shapeInfo.outerRadius || 0); color: root.contentTextColor }
+                                    HusText { text: '内半径'; color: root.contentTextColor; Layout.preferredWidth: root.infoLabelWidth }
+                                    HusText { text: UnitManager.formatDistance(root.shapeInfo.innerRadius || 0); color: root.contentTextColor }
+                                }
+
+                                GridLayout {
+                                    id: angleGrid
+                                    visible: (root.shapeType === 6 || root.shapeType === 7 || root.shapeType === 8)
+                                             && root.shapeInfo.startAngle !== undefined
+                                    columns: 2
+                                    rowSpacing: 8
+                                    columnSpacing: 10
+                                    HusText { text: '起始角'; color: root.contentTextColor; Layout.preferredWidth: root.infoLabelWidth }
+                                    HusText { text: Number(root.shapeInfo.startAngle || 0).toFixed(1) + '°'; color: root.contentTextColor }
+                                    HusText { text: '结束角'; color: root.contentTextColor; Layout.preferredWidth: root.infoLabelWidth }
+                                    HusText { text: Number(root.shapeInfo.endAngle || 0).toFixed(1) + '°'; color: root.contentTextColor }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
 
         HusDivider { Layout.fillWidth: true }
 
-        // Rectangle / Square
-        GridLayout {
-            visible: (shapeType === 0 || shapeType === 1) && shapeInfo.diagonalMeters !== undefined
-            columns: 2
-            rowSpacing: 6
-            columnSpacing: 8
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 10
 
-            HusText { text: "中心纬度:"; color: HusTheme.textColorLight }
-            HusText { text: Number(shapeInfo.centerLat || 0).toFixed(6) + "°" }
+            HusButton {
+                text: '确认'
+                type: HusButton.Type_Primary
 
-            HusText { text: "中心经度:"; color: HusTheme.textColorLight }
-            HusText { text: Number(shapeInfo.centerLng || 0).toFixed(6) + "°" }
+                enabled: airspaceNameInput.text.length > 0
+                onClicked: triggerSave(true)
+            }
 
-            HusText { text: "对角距离:"; color: HusTheme.textColorLight }
-            HusText { text: UnitManager.formatDistance(shapeInfo.diagonalMeters || 0) }
-        }
+            HusButton {
+                text: '应用'
 
-        // Circle
-        GridLayout {
-            visible: shapeType === 2 && shapeInfo.radiusMeters !== undefined
-            columns: 2
-            rowSpacing: 6
-            columnSpacing: 8
+                enabled: airspaceNameInput.text.length > 0
+                onClicked: triggerSave(false)
+            }
 
-            HusText { text: "圆心纬度:"; color: HusTheme.textColorLight }
-            HusText { text: Number(shapeInfo.centerLat || 0).toFixed(6) + "°" }
+            Item { Layout.fillWidth: true }
 
-            HusText { text: "圆心经度:"; color: HusTheme.textColorLight }
-            HusText { text: Number(shapeInfo.centerLng || 0).toFixed(6) + "°" }
+            HusButton {
+                text: '取消'
 
-            HusText { text: "半径距离:"; color: HusTheme.textColorLight }
-            HusText { text: UnitManager.formatDistance(shapeInfo.radiusMeters || 0) }
-        }
-
-        // Polygon / Boundary
-        GridLayout {
-            visible: shapeType === 3 || shapeType === 4
-            columns: 2
-            rowSpacing: 6
-            columnSpacing: 8
-
-            HusText { text: "当前节点:"; color: HusTheme.textColorLight }
-            HusText { text: pointCount + " 个点" }
-        }
-
-        // Ring
-        GridLayout {
-            visible: shapeType === 5 && shapeInfo.outerRadius !== undefined
-            columns: 2
-            rowSpacing: 6
-            columnSpacing: 8
-
-            HusText { text: "外半径:"; color: HusTheme.textColorLight }
-            HusText { text: UnitManager.formatDistance(shapeInfo.outerRadius || 0) }
-            
-            HusText { text: "内半径:"; color: HusTheme.textColorLight; visible: shapeInfo.innerRadius !== undefined }
-            HusText { text: UnitManager.formatDistance(shapeInfo.innerRadius || 0); visible: shapeInfo.innerRadius !== undefined }
-        }
-        
-        // Sector / Arc
-        GridLayout {
-            visible: (shapeType === 6 || shapeType === 7 || shapeType === 8) && shapeInfo.radius !== undefined
-            columns: 2
-            rowSpacing: 6
-            columnSpacing: 8
-
-            HusText { text: "外半径:"; color: HusTheme.textColorLight; visible: shapeInfo.outerRadius !== undefined }
-            HusText { text: UnitManager.formatDistance(shapeInfo.outerRadius || 0); visible: shapeInfo.outerRadius !== undefined }
-
-            HusText { text: "内半径:"; color: HusTheme.textColorLight; visible: shapeInfo.innerRadius !== undefined }
-            HusText { text: UnitManager.formatDistance(shapeInfo.innerRadius || 0); visible: shapeInfo.innerRadius !== undefined }
-            
-            HusText { text: "半径距离:"; color: HusTheme.textColorLight; visible: shapeInfo.radius !== undefined }
-            HusText { text: UnitManager.formatDistance(shapeInfo.radius || 0); visible: shapeInfo.radius !== undefined }
-            
-            HusText { text: "起始角:"; color: HusTheme.textColorLight; visible: shapeInfo.startAngle !== undefined }
-            HusText { text: Number(shapeInfo.startAngle || 0).toFixed(1) + "°"; visible: shapeInfo.startAngle !== undefined }
-            
-            HusText { text: "结束角:"; color: HusTheme.textColorLight; visible: shapeInfo.endAngle !== undefined }
-            HusText { text: Number(shapeInfo.endAngle || 0).toFixed(1) + "°"; visible: shapeInfo.endAngle !== undefined }
+                onClicked: DrawCtrl.cancel()
+            }
         }
     }
 
     function getShapeName(type) {
         switch (type) {
-            case 0: return "矩形"
-            case 1: return "正方形"
-            case 2: return "圆形"
-            case 3: return "多边形"
-            case 4: return "边界线"
-            case 5: return "圆环"
-            case 6: return "圆弧"
-            case 7: return "扇形"
-            case 8: return "扇环"
-            default: return "未知图形"
+            case 0: return '矩形'
+            case 1: return '正方形'
+            case 2: return '圆形'
+            case 3: return '多边形'
+            case 4: return '边界线'
+            case 5: return '圆环'
+            case 6: return '圆弧'
+            case 7: return '扇形'
+            case 8: return '扇环'
+            default: return '未知图形'
         }
     }
 }

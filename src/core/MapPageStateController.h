@@ -47,6 +47,7 @@ public:
     QVariantList shapeOptions() const;
 
     Q_INVOKABLE void handleMapTap(const QPointF& position);
+    Q_INVOKABLE void handleMapDoubleTap(const QPointF& position);
     Q_INVOKABLE void handleMapHover(const QPointF& position);
     Q_INVOKABLE void handleMapHoverChanged(bool hovered);
     Q_INVOKABLE void toggleShapeSelection(int shapeType);

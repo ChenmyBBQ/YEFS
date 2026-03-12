@@ -88,25 +88,34 @@ void DrawingController::addPoint(double latitude, double longitude)
 {
     if (m_state != Drawing) return;
 
+    int minPts = minPointsForShape();
+    int n = m_points.size();
+
+    // 如果是定点数图形且点数已达到，用新点击点替换最后一个点（以便连续调整）
+    if (minPts > 0 && n >= minPts) {
+        m_points[n - 1] = QVariant(QVariantList{ latitude, longitude });
+        emit pointsChanged();
+        updatePreview();
+        return;
+    }
+
     m_points.append(QVariant(QVariantList{ latitude, longitude }));
     clearHoverPoint();
     emit pointsChanged();
 
-    int minPts = minPointsForShape();
-    int n = m_points.size();
+    n = m_points.size();
 
     if (minPts > 0) {
         int rem = minPts - n;
         if (rem > 0)
             setStatusText(QStringLiteral("还需要 %1 个点（右键可取消）").arg(rem));
+        else
+            setStatusText(QStringLiteral("绘制中，双击或在右侧面板点击确认结束"));
     } else {
-        setStatusText(QStringLiteral("已采集 %1 个点，点击「完成」结束（右键可取消）").arg(n));
+        setStatusText(QStringLiteral("已采集 %1 个点，双击或在右侧面板点击确认结束（右键可取消）").arg(n));
     }
 
     updatePreview();
-
-    if (minPts > 0 && n >= minPts)
-        finishDrawing();
 }
 
 void DrawingController::undoLastPoint()
@@ -188,6 +197,11 @@ void DrawingController::onMessage(const QString& topic, const QVariant& data)
         auto map = data.toMap();
         addPoint(map.value("latitude").toDouble(),
                  map.value("longitude").toDouble());
+    } else if (topic == QLatin1String("map/doubleClicked") && m_state == Drawing) {
+        auto map = data.toMap();
+        // Since double-click probably also fires single-click first, addPoint might have been called.
+        // We just ensure we finish drawing.
+        finishDrawing();
     } else if (topic == QLatin1String("map/hovered") && m_state == Drawing) {
         auto map = data.toMap();
         updateHoverPoint(map.value("latitude").toDouble(),

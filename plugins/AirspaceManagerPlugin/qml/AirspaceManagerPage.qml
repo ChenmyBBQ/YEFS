@@ -30,7 +30,7 @@ Rectangle {
         anchors.topMargin: 80
         anchors.rightMargin: 16
         z: 99
-        active: DrawCtrl.drawingState === 1 // Drawing
+        active: DrawCtrl.drawingState === 1 || DrawCtrl.drawingState === 2 // Drawing or Editing
         source: "components/AirspaceInfoPanel.qml"
     }
     // 编辑弹窗
@@ -53,7 +53,10 @@ Rectangle {
     Connections {
         target: DrawCtrl
         function onDrawingCompleted(geoJson, shapeType) {
-            editDialog.openForNew(geoJson, shapeType)
+            // 绘制完成后不再弹出编辑框，直接由右侧属性编辑框完成保存或应用操作
+            // 如果需要支持保存未命名的空域，可以在这里加默认逻辑，或在组件内部处理。
+            // 这里我们只需要移除预览图层，因为最终图层在保存时由 AirspaceInfoPanel 调用。
+            MapLibreEngine.removeLayer("airspace-preview")
         }
         function onDrawingCancelled() {
             // 移除预览图层

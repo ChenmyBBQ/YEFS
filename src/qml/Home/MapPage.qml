@@ -111,6 +111,7 @@ Rectangle {
         anchors.fill: root
         z: 1
         mapView: mapView
+        blockedItems: [newAirspaceToolbar, airspaceListPanel, airspaceInfoPanelLoader, drawingHint, statusBar]
     }
 
     MapStyleLoadingOverlay {
@@ -178,6 +179,24 @@ Rectangle {
         visible: root.pageStateController.airspaceListVisible
         z: 50
         onCloseRequested: root.pageStateController.hideAirspaceList()
+    }
+
+    Loader {
+        id: airspaceInfoPanelLoader
+        anchors.top: root.top
+        anchors.right: root.right
+        anchors.topMargin: root.pageStateController.airspaceListVisible ? 15 : 60
+        anchors.rightMargin: root.pageStateController.airspaceListVisible ? airspaceListPanel.width + 30 : 15
+        z: 99
+        active: root.pageStateController.airspacePanelVisible
+        visible: root.pageStateController.airspacePanelVisible
+        source: "qrc:/AirspaceManagerPlugin/qml/components/AirspaceInfoPanel.qml"
+
+        onStatusChanged: {
+            if (status === Loader.Error) {
+                console.error('[MapPage] AirspaceInfoPanel load failed, source =', source)
+            }
+        }
     }
 }
 
