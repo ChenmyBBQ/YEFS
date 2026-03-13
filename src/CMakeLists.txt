@@ -28,6 +28,8 @@ set(CORE_SOURCES
 # 兼容旧代码
 set(LEGACY_SOURCES
     cpp/main.cpp
+    cpp/logsetup.cpp
+    cpp/logsetup.h
     cpp/customtheme.cpp
     cpp/customtheme.h
     cpp/datagenerator.cpp
