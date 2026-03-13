@@ -14,6 +14,12 @@ HusWindow {
     property bool startupCoverDismissed: false
     property color startupCoverColor: "#b8d9f0"
 
+    function logTag(subModule, feature) {
+        var version = Qt.application.version && Qt.application.version.length > 0
+            ? Qt.application.version : "unknown"
+        return "[M:MainApp][SM:" + subModule + "][FN:" + feature + "][V:" + version + "]"
+    }
+
     function cycleMenuCompactMode() {
         if (yefsMenu.compactMode === HusMenu.Mode_Relaxed) {
             yefsMenu.compactMode = HusMenu.Mode_Standard
@@ -37,11 +43,11 @@ HusWindow {
     }
 
     function toggleSettingsPanel() {
-        console.log('[Settings] Button clicked, loadedOnce:', settingsOverlay.loadedOnce, 'visible:', settingsOverlay.settingsVisible)
+        console.log(logTag('SettingsOverlay', 'toggleSettingsPanel'), 'button clicked, loadedOnce:', settingsOverlay.loadedOnce, 'visible:', settingsOverlay.settingsVisible)
         if (!settingsOverlay.loadedOnce)
             settingsOverlay.loadedOnce = true
         settingsOverlay.settingsVisible = !settingsOverlay.settingsVisible
-        console.log('[Settings] After toggle, visible:', settingsOverlay.settingsVisible)
+        console.log(logTag('SettingsOverlay', 'toggleSettingsPanel'), 'after toggle, visible:', settingsOverlay.settingsVisible)
     }
 
     function handleSearchSelection(option) {
@@ -100,7 +106,7 @@ HusWindow {
 
     // 确保窗口关闭时完全退出应用程序
     onClosing: (close) => {
-        console.log("[Main] Window closing, calling Qt.quit()");
+        console.log(logTag('Lifecycle', 'onClosing'), "window closing, calling Qt.quit()");
         Qt.quit()
     }
 
@@ -243,7 +249,7 @@ HusWindow {
                 mainWindow.startupCoverDismissed = true
             }
 
-            console.log("[Main] Message:", topic, JSON.stringify(data))
+            console.log(mainWindow.logTag('MessageBus', 'onMessage'), "message:", topic, JSON.stringify(data))
         }
     }
 }

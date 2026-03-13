@@ -11,6 +11,12 @@ Item {
     signal closeRequested()
     signal applyRequested()
 
+    function logTag(feature) {
+        var version = Qt.application.version && Qt.application.version.length > 0
+            ? Qt.application.version : "unknown"
+        return "[M:MainApp][SM:SettingsOverlay][FN:" + feature + "][V:" + version + "]"
+    }
+
     onSettingsVisibleChanged: {
         if (settingsVisible)
             loadedOnce = true
@@ -25,9 +31,9 @@ Item {
 
         onStatusChanged: {
             if (status === Loader.Error) {
-                console.error('[Settings] Loader error. source:', root.source)
+                console.error(root.logTag('Loader.onStatusChanged'), 'loader error. source:', root.source)
             } else {
-                console.log('[Settings] Loader status:', status, 'active:', active, 'visible:', visible)
+                console.log(root.logTag('Loader.onStatusChanged'), 'loader status:', status, 'active:', active, 'visible:', visible)
             }
         }
 
@@ -40,7 +46,7 @@ Item {
             }
 
             function onApplyRequested() {
-                console.log('[Settings] Apply requested')
+                console.log(root.logTag('onApplyRequested'), 'apply requested')
                 root.applyRequested()
             }
         }

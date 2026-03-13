@@ -160,3 +160,24 @@
 - 跨模块通知优先用 `MessageBus`，避免页面直接强依赖插件私有对象。
 - 新插件若依赖数据库，应继续通过 `DBCompt` 访问，而不是自行维护第二套连接。
 - 任何会影响主导航、消息主题、状态流或核心算法的改动，都需要同步更新本文件。
+
+## 8. 日志规范（模块/子模块/功能/版本）
+
+为提高排障效率，主程序与各模块统一采用以下日志标签格式：
+
+- `[M:<模块>]`：一级模块，例如 `MainApp`、`Application`、`PluginManager`。
+- `[SM:<子模块>]`：二级模块，例如 `SettingsOverlay`、`MessageBus`。
+- `[FN:<功能>]`：功能或函数名，例如 `toggleSettingsPanel`、`onMessage`。
+- `[V:<版本>]`：应用版本，来自 `YEFS_VERSION` 或 `Qt.application.version`。
+
+当前落地策略：
+
+1. `cpp/main.cpp` 的消息处理器统一追加 `[M][FN][V]` 基础字段。
+2. QML 关键链路（主窗口、设置入口）通过统一 `logTag(...)` 输出 `[M][SM][FN][V]`。
+3. 其余 C++/QML 模块按功能改造时逐步迁移，避免一次性大面积重写日志。
+
+建议新增或改造日志时，优先记录“动作 + 关键状态 + 输入参数”，例如：
+
+- 打开/关闭页面：记录可见状态变化。
+- 加载器状态变化：记录 source、status、active、visible。
+- 消息总线转发：记录 topic 与关键 payload。
