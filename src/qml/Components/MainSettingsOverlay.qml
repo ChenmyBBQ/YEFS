@@ -25,7 +25,7 @@ Item {
 
         onStatusChanged: {
             if (status === Loader.Error) {
-                console.error('[Settings] Loader error:', errorString())
+                console.error('[Settings] Loader error. source:', root.source)
             } else {
                 console.log('[Settings] Loader status:', status, 'active:', active, 'visible:', visible)
             }

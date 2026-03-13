@@ -222,7 +222,7 @@ HusWindow {
             MainSettingsOverlay {
                 id: settingsOverlay
                 anchors.fill: parent
-                source: "./Home/SettingsPage.qml"
+                source: "qrc:/YEFSApp/qml/Home/SettingsPage.qml"
             }
 
             StartupCoverOverlay {
