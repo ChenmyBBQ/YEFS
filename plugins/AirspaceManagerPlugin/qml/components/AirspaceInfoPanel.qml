@@ -23,12 +23,14 @@ HusCard {
     readonly property int sectionHeaderHeight: 34
     readonly property int sectionToggleButtonSize: 28
     readonly property color sectionCardColor: HusThemeFunctions.alpha(HusTheme.Primary.colorBgContainer, 0.98)
-    readonly property color sectionHeaderColor: '#6ea6d8'
+    readonly property color sectionHeaderColor: '#87CEEB'
     readonly property color sectionHeaderTextColor: '#ffffff'
     readonly property color contentTextColor: '#111111'
+    readonly property int previewRefreshIntervalMs: 100
     property bool styleExpanded: true
     property bool dataExpanded: true
     property bool detailExpanded: false
+    property var pendingPreviewStyle: ({})
 
     function triggerSave(complete) {
         let styleJson = shapeEditor.getStyleJson()
@@ -50,6 +52,37 @@ HusCard {
         if (complete) {
             DrawCtrl.cancel()
         }
+    }
+
+    function currentPreviewStyle(styleOverride) {
+        let style = styleOverride || shapeEditor.styleData || {}
+        return {
+            "fill-color": style["fill-color"] || "#3388ff",
+            "fill-opacity": style["fill-opacity"] !== undefined ? style["fill-opacity"] : 0.3,
+            "line-color": style["line-color"] || "#3388ff",
+            "line-width": style["line-width"] !== undefined ? style["line-width"] : 2,
+            "line-dasharray": style["line-dasharray"] || []
+        }
+    }
+
+    function schedulePreviewRefresh(styleOverride) {
+        root.pendingPreviewStyle = currentPreviewStyle(styleOverride)
+        previewRefreshTimer.restart()
+    }
+
+    function refreshPreviewLayer() {
+        let geoJson = DrawCtrl.previewGeoJson()
+        if (!geoJson || Object.keys(geoJson).length === 0)
+            return
+
+        MapLibreEngine.updateGeoJSONLayer('airspace-preview', geoJson, root.pendingPreviewStyle)
+    }
+
+    Timer {
+        id: previewRefreshTimer
+        interval: root.previewRefreshIntervalMs
+        repeat: false
+        onTriggered: root.refreshPreviewLayer()
     }
 
     ColumnLayout {
@@ -161,6 +194,10 @@ HusCard {
                             id: shapeEditor
                             visible: root.styleExpanded
                             Layout.fillWidth: true
+
+                            onStyleChanged: function(newStyle) {
+                                root.schedulePreviewRefresh(newStyle)
+                            }
                         }
                     }
                 }

@@ -57,6 +57,9 @@ public:
     Q_INVOKABLE virtual void setLayerVisibility(const QString& layerId, bool visible) = 0;
     Q_INVOKABLE virtual void updateLayerData(const QString& layerId, 
                                               const QJsonObject& geoJson) = 0;
+    Q_INVOKABLE virtual void updateGeoJSONLayer(const QString& layerId,
+                                                 const QJsonObject& geoJson,
+                                                 const QVariantMap& style = {}) = 0;
 
     // 样式管理
     Q_INVOKABLE virtual void setStyle(const QString& styleUrl) = 0;

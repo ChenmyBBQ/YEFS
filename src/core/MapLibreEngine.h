@@ -46,6 +46,9 @@ public:
     Q_INVOKABLE void setLayerVisibility(const QString& layerId, bool visible) override;
     Q_INVOKABLE void updateLayerData(const QString& layerId, 
                                       const QJsonObject& geoJson) override;
+    Q_INVOKABLE void updateGeoJSONLayer(const QString& layerId,
+                                         const QJsonObject& geoJson,
+                                         const QVariantMap& style = {}) override;
 
     // 高频绘制预览（基于 MapLibre Annotation API，避免 JSON 序列化）
     Q_INVOKABLE void setPreviewAnnotation(const QVariantList& points);

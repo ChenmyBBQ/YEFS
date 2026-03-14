@@ -31,6 +31,33 @@ static QString detectGeometryType(const QJsonObject& geoJson) {
     return type;
 }
 
+static void applyLayerStyle(QMapLibre::Map* map,
+                            const QString& layerId,
+                            const QString& geometryType,
+                            const QVariantMap& style) {
+    if (!map) return;
+
+    const QString fillLayerId = layerId + QStringLiteral("-fill");
+    if ((geometryType == QLatin1String("Polygon") || geometryType == QLatin1String("MultiPolygon"))
+        && map->layerExists(fillLayerId)) {
+        map->setPaintProperty(fillLayerId, QStringLiteral("fill-color"),
+                              style.value(QStringLiteral("fill-color"), QStringLiteral("#3388ff")));
+        map->setPaintProperty(fillLayerId, QStringLiteral("fill-opacity"),
+                              style.value(QStringLiteral("fill-opacity"), 0.3));
+    }
+
+    const QString lineLayerId = layerId + QStringLiteral("-line");
+    if (!map->layerExists(lineLayerId))
+        return;
+
+    map->setPaintProperty(lineLayerId, QStringLiteral("line-color"),
+                          style.value(QStringLiteral("line-color"), QStringLiteral("#3388ff")));
+    map->setPaintProperty(lineLayerId, QStringLiteral("line-width"),
+                          style.value(QStringLiteral("line-width"), 2));
+    map->setPaintProperty(lineLayerId, QStringLiteral("line-dasharray"),
+                          style.value(QStringLiteral("line-dasharray"), QVariantList{}));
+}
+
 MapLibreEngine* MapLibreEngine::s_instance = nullptr;
 
 MapLibreEngine::MapLibreEngine(QObject* parent)
@@ -164,10 +191,6 @@ void MapLibreEngine::addGeoJSONLayer(const QString& layerId,
         fillParams[QStringLiteral("type")]   = QStringLiteral("fill");
         fillParams[QStringLiteral("source")] = layerId + QStringLiteral("-source");
         map->addLayer(layerId + QStringLiteral("-fill"), fillParams);
-        map->setPaintProperty(layerId + QStringLiteral("-fill"), QStringLiteral("fill-color"),
-                              style.value(QStringLiteral("fill-color"), QStringLiteral("#3388ff")));
-        map->setPaintProperty(layerId + QStringLiteral("-fill"), QStringLiteral("fill-opacity"),
-                              style.value(QStringLiteral("fill-opacity"), 0.3));
     }
 
     // 所有几何类型都添加边界线层
@@ -175,13 +198,7 @@ void MapLibreEngine::addGeoJSONLayer(const QString& layerId,
     lineParams[QStringLiteral("type")]   = QStringLiteral("line");
     lineParams[QStringLiteral("source")] = layerId + QStringLiteral("-source");
     map->addLayer(layerId + QStringLiteral("-line"), lineParams);
-    map->setPaintProperty(layerId + QStringLiteral("-line"), QStringLiteral("line-color"),
-                          style.value(QStringLiteral("line-color"), QStringLiteral("#3388ff")));
-    map->setPaintProperty(layerId + QStringLiteral("-line"), QStringLiteral("line-width"),
-                          style.value(QStringLiteral("line-width"), 2));
-    if (style.contains(QStringLiteral("line-dasharray")))
-        map->setPaintProperty(layerId + QStringLiteral("-line"), QStringLiteral("line-dasharray"),
-                              style[QStringLiteral("line-dasharray")]);
+    applyLayerStyle(map, layerId, geomType, style);
 
     emit layerAdded(layerId);
     MessageBus::instance()->publish(Topics::MAP_LAYER_ADDED, layerId);
@@ -231,6 +248,27 @@ void MapLibreEngine::updateLayerData(const QString& layerId, const QJsonObject& 
         // 源不存在时退回到完整添加
         addGeoJSONLayer(layerId, geoJson, {});
     }
+}
+
+void MapLibreEngine::updateGeoJSONLayer(const QString& layerId,
+                                        const QJsonObject& geoJson,
+                                        const QVariantMap& style)
+{
+    m_layers[layerId] = geoJson;
+
+    auto* map = getNativeMap(m_mapItem);
+    if (!map) return;
+
+    if (map->sourceExists(layerId + QStringLiteral("-source"))) {
+        QVariantMap params;
+        params[QStringLiteral("type")] = QStringLiteral("geojson");
+        params[QStringLiteral("data")] = QJsonDocument(geoJson).toJson(QJsonDocument::Compact);
+        map->updateSource(layerId + QStringLiteral("-source"), params);
+        applyLayerStyle(map, layerId, detectGeometryType(geoJson), style);
+        return;
+    }
+
+    addGeoJSONLayer(layerId, geoJson, style);
 }
 
 void MapLibreEngine::setStyle(const QString& styleUrl)
