@@ -31,6 +31,28 @@ static QString detectGeometryType(const QJsonObject& geoJson) {
     return type;
 }
 
+static QString inferLayerGroupId(const QString& layerId)
+{
+    if (layerId.startsWith(QStringLiteral("airspace-"))) {
+        return QStringLiteral("airspace");
+    }
+    return {};
+}
+
+static QString inferBusinessObjectId(const QString& layerId)
+{
+    if (layerId.startsWith(QStringLiteral("airspace-"))
+        && layerId != QStringLiteral("airspace-preview")) {
+        return layerId.mid(QStringLiteral("airspace-").size());
+    }
+    return {};
+}
+
+static bool inferLayerQueryable(const QString& layerId)
+{
+    return layerId != QStringLiteral("airspace-preview");
+}
+
 static void applyLayerStyle(QMapLibre::Map* map,
                             const QString& layerId,
                             const QString& geometryType,
@@ -170,7 +192,16 @@ void MapLibreEngine::addGeoJSONLayer(const QString& layerId,
                                       const QJsonObject& geoJson,
                                       const QVariantMap& style)
 {
-    m_layers[layerId] = geoJson;
+    HostedLayerState layerState;
+    layerState.geoJson = geoJson;
+    layerState.style = style;
+    layerState.groupId = inferLayerGroupId(layerId);
+    layerState.businessObjectId = inferBusinessObjectId(layerId);
+    layerState.queryEnabled = inferLayerQueryable(layerId);
+    if (m_layers.contains(layerId)) {
+        layerState.visible = m_layers.value(layerId).visible;
+    }
+    m_layers[layerId] = layerState;
 
     auto* map = getNativeMap(m_mapItem);
     if (!map) {
@@ -224,6 +255,10 @@ void MapLibreEngine::removeLayer(const QString& layerId)
 
 void MapLibreEngine::setLayerVisibility(const QString& layerId, bool visible)
 {
+    if (m_layers.contains(layerId)) {
+        m_layers[layerId].visible = visible;
+    }
+
     auto* map = getNativeMap(m_mapItem);
     if (!map) return;
     const QString vis = visible ? QStringLiteral("visible") : QStringLiteral("none");
@@ -235,7 +270,16 @@ void MapLibreEngine::setLayerVisibility(const QString& layerId, bool visible)
 
 void MapLibreEngine::updateLayerData(const QString& layerId, const QJsonObject& geoJson)
 {
-    m_layers[layerId] = geoJson;
+    if (m_layers.contains(layerId)) {
+        m_layers[layerId].geoJson = geoJson;
+    } else {
+        HostedLayerState layerState;
+        layerState.geoJson = geoJson;
+        layerState.groupId = inferLayerGroupId(layerId);
+        layerState.businessObjectId = inferBusinessObjectId(layerId);
+        layerState.queryEnabled = inferLayerQueryable(layerId);
+        m_layers[layerId] = layerState;
+    }
 
     auto* map = getNativeMap(m_mapItem);
     if (!map) return;
@@ -250,11 +294,49 @@ void MapLibreEngine::updateLayerData(const QString& layerId, const QJsonObject& 
     }
 }
 
+void MapLibreEngine::updateLayerStyle(const QString& layerId, const QVariantMap& style)
+{
+    if (m_layers.contains(layerId)) {
+        m_layers[layerId].style = style;
+    } else {
+        HostedLayerState layerState;
+        layerState.style = style;
+        layerState.groupId = inferLayerGroupId(layerId);
+        layerState.businessObjectId = inferBusinessObjectId(layerId);
+        layerState.queryEnabled = inferLayerQueryable(layerId);
+        m_layers[layerId] = layerState;
+    }
+
+    auto* map = getNativeMap(m_mapItem);
+    if (!map) {
+        return;
+    }
+
+    const auto layerState = m_layers.value(layerId);
+    const QJsonObject& geoJson = layerState.geoJson;
+    if (geoJson.isEmpty()) {
+        return;
+    }
+
+    applyLayerStyle(map, layerId, detectGeometryType(geoJson), style);
+}
+
 void MapLibreEngine::updateGeoJSONLayer(const QString& layerId,
                                         const QJsonObject& geoJson,
                                         const QVariantMap& style)
 {
-    m_layers[layerId] = geoJson;
+    if (m_layers.contains(layerId)) {
+        m_layers[layerId].geoJson = geoJson;
+        m_layers[layerId].style = style;
+    } else {
+        HostedLayerState layerState;
+        layerState.geoJson = geoJson;
+        layerState.style = style;
+        layerState.groupId = inferLayerGroupId(layerId);
+        layerState.businessObjectId = inferBusinessObjectId(layerId);
+        layerState.queryEnabled = inferLayerQueryable(layerId);
+        m_layers[layerId] = layerState;
+    }
 
     auto* map = getNativeMap(m_mapItem);
     if (!map) return;
@@ -319,6 +401,25 @@ QStringList MapLibreEngine::availableStyles() const
 void MapLibreEngine::addStyle(const QString& name, const QString& url)
 {
     m_styles[name] = url;
+}
+
+QList<MapLibreEngine::QueryLayerSnapshot> MapLibreEngine::queryableLayersSnapshot() const
+{
+    QList<QueryLayerSnapshot> snapshots;
+    snapshots.reserve(m_layers.size());
+
+    for (auto it = m_layers.cbegin(); it != m_layers.cend(); ++it) {
+        QueryLayerSnapshot snapshot;
+        snapshot.layerId = it.key();
+        snapshot.groupId = it.value().groupId;
+        snapshot.businessObjectId = it.value().businessObjectId;
+        snapshot.geoJson = it.value().geoJson;
+        snapshot.visible = it.value().visible;
+        snapshot.queryEnabled = it.value().queryEnabled;
+        snapshots.append(snapshot);
+    }
+
+    return snapshots;
 }
 
 void MapLibreEngine::onMapReady()

@@ -217,6 +217,8 @@ void DrawingController::onMessage(const QString& topic, const QVariant& data)
         finishDrawing();
     } else if (topic == QLatin1String("airspace-manager/cancel")) {
         cancel();
+    } else if (topic == QLatin1String("airspace-manager/undo")) {
+        undoLastPoint();
     }
 }
 

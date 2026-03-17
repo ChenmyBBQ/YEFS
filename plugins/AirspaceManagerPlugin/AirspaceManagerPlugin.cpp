@@ -34,6 +34,10 @@ bool AirspaceManagerPlugin::initialize(YEFS::PluginContext* context)
     m_model = new AirspaceModel(m_database, this);
     m_model->loadFromDatabase();
 
+    // 创建选中控制器
+    m_selectionCtrl = new AirspaceSelectionController(m_model, this);
+    m_selectionCtrl->attachContext(m_context);
+
     // 创建形状生成器
     m_shapeGen = new ShapeGenerator(this);
 
@@ -46,6 +50,8 @@ bool AirspaceManagerPlugin::initialize(YEFS::PluginContext* context)
         if (msgBus) {
             connect(msgBus, SIGNAL(message(QString,QVariant)),
                     m_drawCtrl, SLOT(onMessage(QString,QVariant)));
+            connect(msgBus, SIGNAL(message(QString,QVariant)),
+                    m_selectionCtrl, SLOT(onMessage(QString,QVariant)));
 
             // 绘制状态变化时通知 MapPage
             connect(m_drawCtrl, &DrawingController::drawingStateChanged,
@@ -173,6 +179,7 @@ void AirspaceManagerPlugin::registerQmlTypes()
     // 这些实例通过插件管理器的 getPlugin() 获取后在 QML 中使用
     qmlRegisterSingletonInstance("AirspaceManager", 1, 0, "AirspaceDB", m_database);
     qmlRegisterSingletonInstance("AirspaceManager", 1, 0, "AirspaceModel", m_model);
+    qmlRegisterSingletonInstance("AirspaceManager", 1, 0, "AirspaceSelection", m_selectionCtrl);
     qmlRegisterSingletonInstance("AirspaceManager", 1, 0, "ShapeGen", m_shapeGen);
     qmlRegisterSingletonInstance("AirspaceManager", 1, 0, "DrawCtrl", m_drawCtrl);
 }

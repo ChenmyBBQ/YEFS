@@ -12,6 +12,12 @@ Rectangle {
     id: root
     color: HusTheme.Primary.colorBgContainer
     width: 260
+    property var selectedData: AirspaceSelection.selectedAirspaceData
+    property var selectedProps: selectedData.properties ? selectedData.properties : ({})
+
+    function isSelected(airspaceId) {
+        return AirspaceSelection.selectedAirspaceId === airspaceId
+    }
 
     ColumnLayout {
         anchors.fill: parent
@@ -49,6 +55,81 @@ Rectangle {
             iconSource: HusIcon.SearchOutlined
         }
 
+        Rectangle {
+            id: selectionCard
+            Layout.fillWidth: true
+            visible: AirspaceSelection.hasSelection
+            implicitHeight: selectionContent.implicitHeight + 20
+            radius: HusTheme.Primary.radiusPrimary
+            color: HusThemeFunctions.alpha(HusTheme.Primary.colorPrimary, 0.08)
+            border.color: HusThemeFunctions.alpha(HusTheme.Primary.colorPrimary, 0.25)
+
+            ColumnLayout {
+                id: selectionContent
+                anchors.fill: parent
+                anchors.margins: 10
+                spacing: 6
+
+                RowLayout {
+                    Layout.fillWidth: true
+
+                    HusText {
+                        text: qsTr('当前选中')
+                        font.pixelSize: 12
+                        font.bold: true
+                        color: HusTheme.Primary.colorPrimary
+                    }
+
+                    Item { Layout.fillWidth: true }
+
+                    HusIconButton {
+                        width: 24
+                        height: 24
+                        iconSource: HusIcon.CloseOutlined
+                        iconSize: 12
+                        type: HusButton.Type_Text
+                        onClicked: AirspaceSelection.clearSelection()
+                    }
+                }
+
+                HusText {
+                    Layout.fillWidth: true
+                    text: root.selectedData.name || qsTr('未命名空域')
+                    font.pixelSize: 14
+                    font.bold: true
+                    elide: Text.ElideRight
+                }
+
+                HusText {
+                    Layout.fillWidth: true
+                    text: (root.selectedData.shapeTypeName || qsTr('未知'))
+                          + qsTr('  |  ID: %1').arg(AirspaceSelection.selectedAirspaceId)
+                    font.pixelSize: 11
+                    color: HusTheme.Primary.colorTextSecondary
+                    wrapMode: Text.WrapAnywhere
+                }
+
+                HusText {
+                    Layout.fillWidth: true
+                    visible: root.selectedProps.minAltitude !== undefined
+                    text: qsTr('高度: %1m - %2m').arg(
+                              root.selectedProps.minAltitude !== undefined ? root.selectedProps.minAltitude : 0,
+                              root.selectedProps.maxAltitude !== undefined ? root.selectedProps.maxAltitude : 0)
+                    font.pixelSize: 11
+                    color: HusTheme.Primary.colorTextSecondary
+                }
+
+                HusText {
+                    Layout.fillWidth: true
+                    visible: !!root.selectedProps.remarks
+                    text: qsTr('备注: %1').arg(root.selectedProps.remarks)
+                    font.pixelSize: 11
+                    color: HusTheme.Primary.colorTextSecondary
+                    wrapMode: Text.WordWrap
+                }
+            }
+        }
+
         // 列表
         ListView {
             id: listView
@@ -62,9 +143,15 @@ Rectangle {
             delegate: Rectangle {
                 width: listView.width
                 radius: HusTheme.Primary.radiusPrimary
-                color: itemMouse.containsMouse
-                       ? HusThemeFunctions.alpha(HusTheme.Primary.colorPrimary, 0.06)
-                       : "transparent"
+                                color: root.isSelected(model.airspaceId)
+                                             ? HusThemeFunctions.alpha(HusTheme.Primary.colorPrimary, 0.12)
+                                             : itemMouse.containsMouse
+                                                 ? HusThemeFunctions.alpha(HusTheme.Primary.colorPrimary, 0.06)
+                                                 : "transparent"
+                                border.width: root.isSelected(model.airspaceId) ? 1 : 0
+                                border.color: root.isSelected(model.airspaceId)
+                                                            ? HusThemeFunctions.alpha(HusTheme.Primary.colorPrimary, 0.35)
+                                                            : "transparent"
 
                 visible: searchField.text.length === 0 ||
                          model.name.toLowerCase().indexOf(searchField.text.toLowerCase()) >= 0
@@ -74,6 +161,7 @@ Rectangle {
                     id: itemMouse
                     anchors.fill: parent
                     hoverEnabled: true
+                    onClicked: AirspaceSelection.selectAirspace(model.airspaceId)
                 }
 
                 RowLayout {
@@ -96,6 +184,7 @@ Rectangle {
                         HusText {
                             text: model.name
                             font.pixelSize: 13
+                            font.bold: root.isSelected(model.airspaceId)
                             elide: Text.ElideRight
                             Layout.fillWidth: true
                         }

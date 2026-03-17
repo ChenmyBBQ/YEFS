@@ -26,11 +26,9 @@ HusCard {
     readonly property color sectionHeaderColor: '#87CEEB'
     readonly property color sectionHeaderTextColor: '#ffffff'
     readonly property color contentTextColor: '#111111'
-    readonly property int previewRefreshIntervalMs: 100
     property bool styleExpanded: true
     property bool dataExpanded: true
     property bool detailExpanded: false
-    property var pendingPreviewStyle: ({})
 
     function triggerSave(complete) {
         let styleJson = shapeEditor.getStyleJson()
@@ -50,7 +48,7 @@ HusCard {
             }
         }
         if (complete) {
-            DrawCtrl.cancel()
+            EditRuntime.cancelEdit()
         }
     }
 
@@ -65,24 +63,12 @@ HusCard {
         }
     }
 
-    function schedulePreviewRefresh(styleOverride) {
-        root.pendingPreviewStyle = currentPreviewStyle(styleOverride)
-        previewRefreshTimer.restart()
-    }
-
-    function refreshPreviewLayer() {
+    function applyPreviewStyle(styleOverride) {
         let geoJson = DrawCtrl.previewGeoJson()
         if (!geoJson || Object.keys(geoJson).length === 0)
             return
 
-        MapLibreEngine.updateGeoJSONLayer('airspace-preview', geoJson, root.pendingPreviewStyle)
-    }
-
-    Timer {
-        id: previewRefreshTimer
-        interval: root.previewRefreshIntervalMs
-        repeat: false
-        onTriggered: root.refreshPreviewLayer()
+        MapLibreEngine.updateLayerStyle('airspace-preview', root.currentPreviewStyle(styleOverride))
     }
 
     ColumnLayout {
@@ -196,7 +182,7 @@ HusCard {
                             Layout.fillWidth: true
 
                             onStyleChanged: function(newStyle) {
-                                root.schedulePreviewRefresh(newStyle)
+                                root.applyPreviewStyle(newStyle)
                             }
                         }
                     }
@@ -407,7 +393,7 @@ HusCard {
             HusButton {
                 text: '取消'
 
-                onClicked: DrawCtrl.cancel()
+                onClicked: EditRuntime.cancelEdit()
             }
         }
     }

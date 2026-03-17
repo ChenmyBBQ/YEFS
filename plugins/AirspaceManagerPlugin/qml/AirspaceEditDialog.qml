@@ -17,14 +17,52 @@ HusDrawer {
     property bool editMode: false
     property string editId: ""
     property int shapeType: -1
+    property string originalStyleJson: "{}"
+    property bool saveSucceeded: false
 
-    signal saved(string airspaceId)
+    signal saved(string airspaceId, bool created)
     signal cancelled()
+
+    function currentLayerId() {
+        return 'airspace-' + root.editId
+    }
+
+    function currentLayerStyle() {
+        try {
+            return JSON.parse(shapeEditor.getStyleJson())
+        } catch (e) {
+            return {}
+        }
+    }
+
+    function originalLayerStyle() {
+        try {
+            return JSON.parse(root.originalStyleJson || '{}')
+        } catch (e) {
+            return {}
+        }
+    }
+
+    function applyCurrentStyleToLayer() {
+        if (!root.editMode || !root.editId)
+            return
+
+        MapLibreEngine.updateLayerStyle(root.currentLayerId(), root.currentLayerStyle())
+    }
+
+    function restoreOriginalLayerStyle() {
+        if (!root.editMode || !root.editId)
+            return
+
+        MapLibreEngine.updateLayerStyle(root.currentLayerId(), root.originalLayerStyle())
+    }
 
     function openForNew(geoJson, shapeType) {
         root.editMode = false
         root.editId = ""
         root.shapeType = shapeType
+        root.originalStyleJson = '{}'
+        root.saveSucceeded = false
         shapeEditor.setStyleData('{}')
         dataEditor.airspaceName = ""
         dataEditor.setPropertiesData('{}')
@@ -38,10 +76,18 @@ HusDrawer {
         if (!data.id) return
 
         root.shapeType = data.shapeType
+        root.originalStyleJson = data.styleJson || '{}'
+        root.saveSucceeded = false
         dataEditor.airspaceName = data.name
         shapeEditor.setStyleData(data.styleJson)
         dataEditor.setPropertiesData(data.propertiesJson)
         root.open()
+    }
+
+    onClosed: {
+        if (!root.saveSucceeded) {
+            root.restoreOriginalLayerStyle()
+        }
     }
 
     contentDelegate: Component {
@@ -83,6 +129,10 @@ HusDrawer {
                 ShapePropertyEditor {
                     id: shapeEditor
                     Layout.fillWidth: true
+
+                    onStyleChanged: function() {
+                        root.applyCurrentStyleToLayer()
+                    }
                 }
 
                 HusDivider {}
@@ -111,6 +161,8 @@ HusDrawer {
                         text: qsTr('取消')
                         type: HusButton.Type_Default
                         onClicked: {
+                            root.saveSucceeded = false
+                            root.restoreOriginalLayerStyle()
                             root.close()
                             root.cancelled()
                         }
@@ -126,7 +178,7 @@ HusDrawer {
 
                             if (root.editMode) {
                                 let data = AirspaceModel.getAirspace(root.editId)
-                                AirspaceModel.updateAirspace(
+                                let updated = AirspaceModel.updateAirspace(
                                     root.editId,
                                     dataEditor.airspaceName,
                                     root.shapeType,
@@ -134,14 +186,21 @@ HusDrawer {
                                     styleJson,
                                     propsJson
                                 )
-                                root.saved(root.editId)
+                                if (updated) {
+                                    MapLibreEngine.updateLayerStyle(root.currentLayerId(), root.currentLayerStyle())
+                                    root.saveSucceeded = true
+                                    root.saved(root.editId, false)
+                                }
                             } else {
                                 let uuid = DrawCtrl.saveAirspace(
                                     dataEditor.airspaceName,
                                     styleJson,
                                     propsJson
                                 )
-                                root.saved(uuid)
+                                if (uuid) {
+                                    root.saveSucceeded = true
+                                    root.saved(uuid, true)
+                                }
                             }
                             root.close()
                         }

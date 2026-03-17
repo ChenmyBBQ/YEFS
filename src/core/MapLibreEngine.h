@@ -4,7 +4,9 @@
 #include "IMapEngine.h"
 #include <QQmlEngine>
 #include <QHash>
+#include <QJsonObject>
 #include <QPointF>
+#include <QVariantMap>
 
 namespace YEFS {
 
@@ -20,6 +22,15 @@ class MapLibreEngine : public IMapEngine
     QML_SINGLETON
 
 public:
+    struct QueryLayerSnapshot {
+        QString layerId;
+        QString groupId;
+        QString businessObjectId;
+        QJsonObject geoJson;
+        bool visible = true;
+        bool queryEnabled = true;
+    };
+
     static MapLibreEngine* instance();
     static MapLibreEngine* create(QQmlEngine* qmlEngine, QJSEngine* jsEngine);
     static void destroy();
@@ -46,6 +57,8 @@ public:
     Q_INVOKABLE void setLayerVisibility(const QString& layerId, bool visible) override;
     Q_INVOKABLE void updateLayerData(const QString& layerId, 
                                       const QJsonObject& geoJson) override;
+    Q_INVOKABLE void updateLayerStyle(const QString& layerId,
+                                       const QVariantMap& style) override;
     Q_INVOKABLE void updateGeoJSONLayer(const QString& layerId,
                                          const QJsonObject& geoJson,
                                          const QVariantMap& style = {}) override;
@@ -66,6 +79,8 @@ public:
     Q_INVOKABLE void setMapItem(QObject* mapItem);
     Q_INVOKABLE QStringList availableStyles() const;
     Q_INVOKABLE void addStyle(const QString& name, const QString& url);
+
+    QList<QueryLayerSnapshot> queryableLayersSnapshot() const;
 
     // 当前相机状态
     Q_PROPERTY(double latitude READ latitude NOTIFY centerChanged)
@@ -117,7 +132,16 @@ private:
     double m_bearing = 0.0;
 
     // 图层跟踪
-    QHash<QString, QJsonObject> m_layers;
+    struct HostedLayerState {
+        QJsonObject geoJson;
+        QVariantMap style;
+        QString groupId;
+        QString businessObjectId;
+        bool visible = true;
+        bool queryEnabled = true;
+    };
+
+    QHash<QString, HostedLayerState> m_layers;
 
     // 预览辅助线 Annotatio ID
     quint32 m_previewAnnotationId = 0;

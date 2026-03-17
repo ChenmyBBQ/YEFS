@@ -6,6 +6,7 @@
 
 #include "AirspaceDatabase.h"
 #include "AirspaceModel.h"
+#include "AirspaceSelectionController.h"
 #include "ShapeGenerator.h"
 #include "DrawingController.h"
 
@@ -46,6 +47,7 @@ public:
     // QML 可访问的子对象 getter
     Q_INVOKABLE QObject* drawingController() const { return m_drawCtrl; }
     Q_INVOKABLE QObject* airspaceModel()     const { return m_model; }
+    Q_INVOKABLE QObject* airspaceSelection() const { return m_selectionCtrl; }
     Q_INVOKABLE QObject* shapeGenerator()    const { return m_shapeGen; }
     Q_INVOKABLE QObject* database()          const { return m_database; }
 
@@ -55,6 +57,7 @@ private:
 
     AirspaceDatabase*  m_database  = nullptr;
     AirspaceModel*     m_model     = nullptr;
+    AirspaceSelectionController* m_selectionCtrl = nullptr;
     ShapeGenerator*    m_shapeGen  = nullptr;
     DrawingController* m_drawCtrl  = nullptr;
     bool               m_previewLayerExists = false;

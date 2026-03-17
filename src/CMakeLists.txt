@@ -87,6 +87,10 @@ qt_add_qml_module(${PROJECT_NAME}
         core/PluginManager.cpp
         core/MapLibreEngine.h
         core/MapLibreEngine.cpp
+        core/EditRuntime.h
+        core/EditRuntime.cpp
+        core/QueryRuntime.h
+        core/QueryRuntime.cpp
         core/MapPageStateController.h
         core/MapPageStateController.cpp
         core/MapPageStyleController.h

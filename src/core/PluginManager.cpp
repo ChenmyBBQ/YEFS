@@ -1,6 +1,8 @@
 #include "PluginManager.h"
+#include "EditRuntime.h"
 #include "MessageBus.h"
 #include "MapLibreEngine.h"
+#include "QueryRuntime.h"
 #include "SettingsManager.h"
 #include "MapSourceManager.h"
 #include <QCoreApplication>
@@ -28,6 +30,12 @@ public:
         }
         if (serviceName == "MapLibreEngine") {
             return MapLibreEngine::instance();
+        }
+        if (serviceName == "EditRuntime") {
+            return EditRuntime::instance();
+        }
+        if (serviceName == "QueryRuntime") {
+            return QueryRuntime::instance();
         }
         if (serviceName == "SettingsManager") {
             return SettingsManager::instance();

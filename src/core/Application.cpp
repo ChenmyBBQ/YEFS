@@ -8,7 +8,9 @@
 #include "SettingsManager.h"
 #include "UnitManager.h"
 #include "AppIconManager.h"
+#include "EditRuntime.h"
 #include "NerdIcon.h"
+#include "QueryRuntime.h"
 #include "parsers/GeoJSONParser.h"
 #include "parsers/GPXParser.h"
 #include "parsers/KMLParser.h"
@@ -83,6 +85,8 @@ void Application::cleanup()
     OnlineMapProviderManager::destroy();
     MapParserFactory::destroy();
     MapLibreEngine::destroy();
+    QueryRuntime::destroy();
+    EditRuntime::destroy();
     AppIconManager::destroy();
     NerdIcon::destroy();
     DBCompt::destroy();            // 关闭数据库连接

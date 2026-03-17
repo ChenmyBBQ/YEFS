@@ -1,8 +1,10 @@
 #include "MapPageStateController.h"
 
 #include "CoordinateConverter.h"
+#include "EditRuntime.h"
 #include "MapLibreEngine.h"
 #include "MessageBus.h"
+#include "QueryRuntime.h"
 
 #include <QGeoCoordinate>
 #include <QVariantMap>
@@ -118,18 +120,17 @@ void MapPageStateController::handleMapTap(const QPointF& position)
     }
 
     if (m_selectedShapeType >= 0 && !m_drawingActive) {
-        // 首次有效地图点击：启动绘制流程，并把本次点击记为首个控制点。
-        // 工具栏、面板等覆盖层点击已在 MapInteractionLayer 中被拦截。
-        MessageBus::instance()->send(QStringLiteral("airspace-manager/draw"), QVariantMap{
-            {QStringLiteral("shapeType"), m_selectedShapeType}
-        });
-        MapLibreEngine::instance()->onMapClicked(coordinate.latitude(), coordinate.longitude());
+        EditRuntime::instance()->beginAirspaceEditSession(m_selectedShapeType);
+        EditRuntime::instance()->addControlPoint(coordinate.latitude(), coordinate.longitude());
         return;
     }
 
     if (m_drawingActive) {
-        MapLibreEngine::instance()->onMapClicked(coordinate.latitude(), coordinate.longitude());
+        EditRuntime::instance()->addControlPoint(coordinate.latitude(), coordinate.longitude());
+        return;
     }
+
+    QueryRuntime::instance()->handleTap(position);
 }
 
 void MapPageStateController::handleMapDoubleTap(const QPointF& position)
@@ -177,10 +178,7 @@ void MapPageStateController::processHoverUpdate()
 
     if (m_drawingActive) {
         // 绘图模式：优先更新预览，跳过 UTM/MGRS 转换保证帧率
-        MessageBus::instance()->send(QStringLiteral("map/hovered"), QVariantMap{
-            {QStringLiteral("latitude"), coordinate.latitude()},
-            {QStringLiteral("longitude"), coordinate.longitude()}
-        });
+        EditRuntime::instance()->updateHoverPreview(coordinate.latitude(), coordinate.longitude());
         // 坐标显示仅做 LatLon（轻量），UTM/MGRS 在非绘图时更新
         const QString latLonText = CoordinateConverter::instance()->formatLatLon(
             coordinate.latitude(), coordinate.longitude(), 6);
@@ -201,7 +199,7 @@ void MapPageStateController::handleMapHoverChanged(bool hovered)
 
     resetMouseCoordinate();
     if (m_drawingActive) {
-        MessageBus::instance()->send(QStringLiteral("map/hovered/clear"), QVariantMap{});
+        EditRuntime::instance()->clearHoverPreview();
     }
 }
 
@@ -295,12 +293,12 @@ void MapPageStateController::resetMouseCoordinate()
 
 void MapPageStateController::finishDrawing()
 {
-    MessageBus::instance()->send(QStringLiteral("airspace-manager/finish"), QVariantMap{});
+    EditRuntime::instance()->commitEdit();
 }
 
 void MapPageStateController::cancelDrawing()
 {
-    MessageBus::instance()->send(QStringLiteral("airspace-manager/cancel"), QVariantMap{});
+    EditRuntime::instance()->cancelEdit();
     setDrawingActive(false);
     setDrawingRequiresFinish(false);
     setDrawingStatusText(tr("请在地图上点击选取坐标点"));

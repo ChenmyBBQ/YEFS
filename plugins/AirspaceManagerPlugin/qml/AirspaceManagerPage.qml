@@ -19,7 +19,7 @@ Rectangle {
         anchors.horizontalCenter: parent.horizontalCenter
         anchors.topMargin: 12
         z: 100
-        active: DrawCtrl.drawingState !== 0  // 非 Idle 时显示
+        active: EditRuntime.sessionActive
         sourceComponent: AirspaceToolbar {}
     }
     // 绘制信息面板(绘制模式时显示在右侧)
@@ -30,7 +30,7 @@ Rectangle {
         anchors.topMargin: 80
         anchors.rightMargin: 16
         z: 99
-        active: DrawCtrl.drawingState === 1 || DrawCtrl.drawingState === 2 // Drawing or Editing
+        active: EditRuntime.sessionActive
         source: "components/AirspaceInfoPanel.qml"
     }
     // 编辑弹窗
@@ -38,13 +38,17 @@ Rectangle {
         id: editDialog
         parent: Overlay.overlay
 
-        onSaved: function(airspaceId) {
+        onSaved: function(airspaceId, created) {
             // 将空域渲染到地图
             let data = AirspaceModel.getAirspace(airspaceId)
             if (data.id) {
                 let geoJson = JSON.parse(data.geoJson)
                 let style = JSON.parse(data.styleJson || '{}')
-                MapLibreEngine.addGeoJSONLayer("airspace-" + data.id, geoJson, style)
+                if (created) {
+                    MapLibreEngine.addGeoJSONLayer("airspace-" + data.id, geoJson, style)
+                } else {
+                    MapLibreEngine.updateLayerStyle("airspace-" + data.id, style)
+                }
             }
         }
     }
@@ -102,11 +106,11 @@ Rectangle {
                 text: qsTr('创建空域')
                 type: HusButton.Type_Primary
                 iconSource: HusIcon.PlusOutlined
-                enabled: DrawCtrl.drawingState === 0
+                enabled: !EditRuntime.sessionActive
                 onClicked: {
                     // 切换到地图页面并激活绘制工具栏
                     // 首先显示工具栏让用户选择形状
-                    DrawCtrl.startDrawing(0) // 默认矩形
+                    EditRuntime.beginAirspaceEditSession(0) // 默认矩形
                 }
             }
         }

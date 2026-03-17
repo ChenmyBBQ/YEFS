@@ -15,7 +15,7 @@ Rectangle {
     color: HusThemeFunctions.alpha(HusTheme.Primary.colorBgContainer, 0.95)
     border.color: HusThemeFunctions.alpha(HusTheme.Primary.colorBorder, 0.5)
 
-    property bool isDrawing: DrawCtrl.drawingState === 1  // Drawing
+    property bool isDrawing: EditRuntime.sessionActive
 
     RowLayout {
         id: toolbarRow
@@ -46,8 +46,9 @@ Rectangle {
                 enabled: !root.isDrawing || DrawCtrl.currentShapeType === modelData.type
 
                 onClicked: {
-                    if (!root.isDrawing)
-                        DrawCtrl.startDrawing(modelData.type)
+                    if (!root.isDrawing) {
+                        EditRuntime.beginAirspaceEditSession(modelData.type)
+                    }
                 }
 
                 HusToolTip {
@@ -71,7 +72,7 @@ Rectangle {
             iconSize: 16
             type: HusButton.Type_Text
             enabled: root.isDrawing && DrawCtrl.pointCount > 0
-            onClicked: DrawCtrl.undoLastPoint()
+            onClicked: EditRuntime.undoLastControlPoint()
 
             HusToolTip {
                 visible: parent.hovered
@@ -85,14 +86,14 @@ Rectangle {
             text: qsTr('完成')
             type: HusButton.Type_Primary
             visible: root.isDrawing && DrawCtrl.requiredPoints < 0
-            onClicked: DrawCtrl.finishDrawing()
+            onClicked: EditRuntime.commitEdit()
         }
 
         HusButton {
             text: qsTr('取消')
             type: HusButton.Type_Text
             visible: root.isDrawing
-            onClicked: DrawCtrl.cancel()
+            onClicked: EditRuntime.cancelEdit()
         }
     }
 
@@ -101,7 +102,7 @@ Rectangle {
         anchors.top: parent.bottom
         anchors.topMargin: 6
         anchors.horizontalCenter: parent.horizontalCenter
-        text: DrawCtrl.statusText
+        text: EditRuntime.statusText
         font.pixelSize: 12
         color: HusTheme.Primary.colorTextSecondary
         visible: text.length > 0
