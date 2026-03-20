@@ -1,4 +1,4 @@
-import QtQuick
+﻿import QtQuick
 import QtQuick.Layouts
 import HuskarUI.Basic
 
@@ -12,7 +12,7 @@ ColumnLayout {
 
     readonly property int labelWidth: 82
     readonly property int controlHeight: 34
-    readonly property color textColor: '#111111'
+    readonly property color textColor: '#ffffff'
     property bool showNameField: true
 
     property string airspaceName: ""

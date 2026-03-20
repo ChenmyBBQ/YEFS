@@ -1,4 +1,4 @@
-import QtQuick
+﻿import QtQuick
 import QtQuick.Layouts
 import HuskarUI.Basic
 
@@ -14,7 +14,7 @@ ColumnLayout {
     readonly property int controlHeight: 34
     readonly property int sliderHeight: 30
     readonly property int valueWidth: 42
-    readonly property color textColor: '#111111'
+    readonly property color textColor: '#ffffff'
 
     property var styleData: ({
         "fill-color": "#3388ff",
