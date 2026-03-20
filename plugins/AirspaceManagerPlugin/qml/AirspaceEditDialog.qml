@@ -1,21 +1,18 @@
-﻿import QtQuick
+import QtQuick
 import QtQuick.Layouts
-import QtQuick.Window
 import HuskarUI.Basic
 import AirspaceManager 1.0
 import "components"
 
 /**
- * 空域编辑弹窗 (浮动窗口)
+ * 空域编辑弹窗 (右侧抽屉)
  * 绘制完成后弹出，编辑图形属性和数据属性
  */
-Window {
+HusDrawer {
     id: root
-    flags: Qt.Window
-    width: 420
-    height: 700
+    edge: Qt.RightEdge
+    drawerSize: 420
     title: editMode ? qsTr('编辑空域') : qsTr('新建空域')
-    color: HusTheme.Primary.colorBgContainer
 
     property bool editMode: false
     property string editId: ""
@@ -23,12 +20,11 @@ Window {
     property string originalStyleJson: "{}"
     property var originalStyleData: ({})
     property bool saveSucceeded: false
+    property bool styleExpanded: true
+    property bool dataExpanded: true
 
     signal saved(string airspaceId, bool created)
     signal cancelled()
-
-    function open() { root.show() }
-    function close() { root.hide() }
 
     function currentLayerId() {
         return 'airspace-' + root.editId
@@ -85,141 +81,213 @@ Window {
         root.open()
     }
 
-    onClosing: {
+    onClosed: {
         if (!root.saveSucceeded) {
             root.restoreOriginalLayerStyle()
         }
     }
 
-    Flickable {
-        anchors.fill: parent
-        anchors.margins: 8
-        contentHeight: contentCol.height
-        clip: true
+    contentDelegate: Component {
+        Flickable {
+            anchors.fill: parent
+            anchors.margins: 10
+            contentHeight: contentCol.height
+            clip: true
 
-        ColumnLayout {
-            id: contentCol
-            width: parent.width
-            spacing: 6
-
-            // 形状类型显示
-            RowLayout {
+            ColumnLayout {
+                id: contentCol
+                width: parent.width
                 spacing: 8
-                HusText {
-                    text: qsTr('形状类型')
-                    font.bold: true
-                }
-                HusText {
-                    text: AirspaceModel.shapeTypeName
-                            ? AirspaceModel.shapeTypeName(root.shapeType)
-                            : '—'
-                    color: HusTheme.Primary.colorPrimary
-                }
-            }
 
-            HusDivider {}
-
-            // 图形属性
-            HusText {
-                text: qsTr('图形属性')
-                font.pixelSize: 14
-                font.bold: true
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: shapeEditor.implicitHeight + 16
-                color: "#1E2B3C" // Dark blue
-                radius: 4
-
-                ShapePropertyEditor {
-                    id: shapeEditor
-                    anchors.fill: parent
-                    anchors.margins: 8
-                    
-                    onStyleChanged: function() {
-                        root.applyCurrentStyleToLayer()
+                // 形状类型显示
+                RowLayout {
+                    spacing: 8
+                    HusText {
+                        text: qsTr('形状类型')
+                        font.bold: true
                     }
-                }
-            }
-
-            HusDivider {}
-
-            // 数据属性
-            HusText {
-                text: qsTr('数据属性')
-                font.pixelSize: 14
-                font.bold: true
-            }
-
-            Rectangle {
-                Layout.fillWidth: true
-                Layout.preferredHeight: dataEditor.implicitHeight + 16
-                color: "#1E2B3C" // Dark blue
-                radius: 4
-
-                DataPropertyEditor {
-                    id: dataEditor
-                    anchors.fill: parent
-                    anchors.margins: 8
-                }
-            }
-
-            // 底部按钮
-            Item { Layout.preferredHeight: 16 }
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 12
-
-                Item { Layout.fillWidth: true }
-
-                HusButton {
-                    text: qsTr('取消')
-                    type: HusButton.Type_Default
-                    onClicked: {
-                        root.saveSucceeded = false
-                        root.restoreOriginalLayerStyle()
-                        root.close()
-                        root.cancelled()
+                    HusText {
+                        text: AirspaceModel.shapeTypeName
+                              ? AirspaceModel.shapeTypeName(root.shapeType)
+                              : '—'
+                        color: HusTheme.Primary.colorPrimary
                     }
                 }
 
-                HusButton {
-                    text: root.editMode ? qsTr('更新') : qsTr('保存')
-                    type: HusButton.Type_Primary
-                    enabled: dataEditor.airspaceName.length > 0
-                    onClicked: {
-                        let styleData = shapeEditor.getStyleObject()
-                        let propertiesData = dataEditor.getPropertiesObject()
+                HusDivider {}
 
-                        if (root.editMode) {
-                            let data = AirspaceModel.getAirspace(root.editId)
-                            let updated = AirspaceModel.updateAirspaceData(
-                                root.editId,
-                                dataEditor.airspaceName,
-                                root.shapeType,
-                                data.geoJsonObject || {},
-                                styleData,
-                                propertiesData
-                            )
-                            if (updated) {
-                                MapLibreEngine.updateLayerStyle(root.currentLayerId(), root.currentLayerStyle())
-                                root.saveSucceeded = true
-                                root.saved(root.editId, false)
-                            }
-                        } else {
-                            let uuid = DrawCtrl.saveAirspaceData(
-                                dataEditor.airspaceName,
-                                styleData,
-                                propertiesData
-                            )
-                            if (uuid) {
-                                root.saveSucceeded = true
-                                root.saved(uuid, true)
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: styleSection.implicitHeight + 20
+                    radius: HusTheme.Primary.radiusPrimary
+                    color: '#1A2534'
+                    border.color: 'transparent'
+
+                    ColumnLayout {
+                        id: styleSection
+                        anchors.fill: parent
+                        anchors.margins: 10
+                        spacing: 8
+
+                        Rectangle {
+                            id: styleHeader
+                            Layout.fillWidth: true
+                            implicitHeight: 34
+                            radius: HusTheme.Primary.radiusPrimary
+                            color: '#87CEEB'
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 12
+                                anchors.rightMargin: 4
+                                spacing: 8
+
+                                HusText {
+                                    text: qsTr('图形属性')
+                                    font.pixelSize: 13
+                                    font.bold: true
+                                    color: '#ffffff'
+                                }
+
+                                Item { Layout.fillWidth: true }
+
+                                HusIconButton {
+                                    width: 28
+                                    height: 28
+                                    type: HusButton.Type_Text
+                                    iconSource: root.styleExpanded ? HusIcon.UpOutlined : HusIcon.DownOutlined
+                                    iconSize: 14
+                                    colorText: '#ffffff'
+                                    colorIcon: '#ffffff'
+                                    onClicked: root.styleExpanded = !root.styleExpanded
+                                }
                             }
                         }
-                        root.close()
+
+                        ShapePropertyEditor {
+                            id: shapeEditor
+                            visible: root.styleExpanded
+                            Layout.fillWidth: true
+
+                            onStyleChanged: function() {
+                                root.applyCurrentStyleToLayer()
+                            }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    implicitHeight: dataSection.implicitHeight + 20
+                    radius: HusTheme.Primary.radiusPrimary
+                    color: '#1A2534'
+                    border.color: 'transparent'
+
+                    ColumnLayout {
+                        id: dataSection
+                        anchors.fill: parent
+                        anchors.margins: 10
+                        spacing: 8
+
+                        Rectangle {
+                            id: dataHeader
+                            Layout.fillWidth: true
+                            implicitHeight: 34
+                            radius: HusTheme.Primary.radiusPrimary
+                            color: '#87CEEB'
+
+                            RowLayout {
+                                anchors.fill: parent
+                                anchors.leftMargin: 12
+                                anchors.rightMargin: 4
+                                spacing: 8
+
+                                HusText {
+                                    text: qsTr('数据属性')
+                                    font.pixelSize: 13
+                                    font.bold: true
+                                    color: '#ffffff'
+                                }
+
+                                Item { Layout.fillWidth: true }
+
+                                HusIconButton {
+                                    width: 28
+                                    height: 28
+                                    type: HusButton.Type_Text
+                                    iconSource: root.dataExpanded ? HusIcon.UpOutlined : HusIcon.DownOutlined
+                                    iconSize: 14
+                                    colorText: '#ffffff'
+                                    colorIcon: '#ffffff'
+                                    onClicked: root.dataExpanded = !root.dataExpanded
+                                }
+                            }
+                        }
+
+                        DataPropertyEditor {
+                            id: dataEditor
+                            visible: root.dataExpanded
+                            Layout.fillWidth: true
+                        }
+                    }
+                }
+
+                // 底部按钮
+                Item { Layout.preferredHeight: 16 }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 12
+
+                    Item { Layout.fillWidth: true }
+
+                    HusButton {
+                        text: qsTr('取消')
+                        type: HusButton.Type_Default
+                        onClicked: {
+                            root.saveSucceeded = false
+                            root.restoreOriginalLayerStyle()
+                            root.close()
+                            root.cancelled()
+                        }
+                    }
+
+                    HusButton {
+                        text: root.editMode ? qsTr('更新') : qsTr('保存')
+                        type: HusButton.Type_Primary
+                        enabled: dataEditor.airspaceName.length > 0
+                        onClicked: {
+                            let styleData = shapeEditor.getStyleObject()
+                            let propertiesData = dataEditor.getPropertiesObject()
+
+                            if (root.editMode) {
+                                let data = AirspaceModel.getAirspace(root.editId)
+                                let updated = AirspaceModel.updateAirspaceData(
+                                    root.editId,
+                                    dataEditor.airspaceName,
+                                    root.shapeType,
+                                    data.geoJsonObject || {},
+                                    styleData,
+                                    propertiesData
+                                )
+                                if (updated) {
+                                    MapLibreEngine.updateLayerStyle(root.currentLayerId(), root.currentLayerStyle())
+                                    root.saveSucceeded = true
+                                    root.saved(root.editId, false)
+                                }
+                            } else {
+                                let uuid = DrawCtrl.saveAirspaceData(
+                                    dataEditor.airspaceName,
+                                    styleData,
+                                    propertiesData
+                                )
+                                if (uuid) {
+                                    root.saveSucceeded = true
+                                    root.saved(uuid, true)
+                                }
+                            }
+                            root.close()
+                        }
                     }
                 }
             }

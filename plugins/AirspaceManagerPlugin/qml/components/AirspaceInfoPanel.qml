@@ -1,4 +1,4 @@
-﻿import QtQuick
+import QtQuick
 import QtQuick.Layouts
 import QtQuick.Controls
 import HuskarUI.Basic
@@ -22,7 +22,7 @@ HusCard {
     readonly property int sectionSpacing: 8
     readonly property int sectionHeaderHeight: 34
     readonly property int sectionToggleButtonSize: 28
-    readonly property color sectionCardColor: '#1E2B3C'
+    readonly property color sectionCardColor: '#1A2534'
     readonly property color sectionHeaderColor: '#87CEEB'
     readonly property color sectionHeaderTextColor: '#ffffff'
     readonly property color contentTextColor: '#ffffff'

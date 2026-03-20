@@ -1,4 +1,4 @@
-﻿import QtQuick
+import QtQuick
 import QtQuick.Layouts
 import HuskarUI.Basic
 import AirspaceManager 1.0
@@ -36,7 +36,8 @@ Rectangle {
     // 编辑弹窗
     AirspaceEditDialog {
         id: editDialog
-        
+        parent: Overlay.overlay
+
         onSaved: function(airspaceId, created) {
             // 将空域渲染到地图
             let data = AirspaceModel.getAirspace(airspaceId)
@@ -261,4 +262,3 @@ Rectangle {
         }
     }
 }
-
