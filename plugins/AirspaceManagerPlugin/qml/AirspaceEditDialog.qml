@@ -18,6 +18,7 @@ HusDrawer {
     property string editId: ""
     property int shapeType: -1
     property string originalStyleJson: "{}"
+    property var originalStyleData: ({})
     property bool saveSucceeded: false
 
     signal saved(string airspaceId, bool created)
@@ -28,19 +29,11 @@ HusDrawer {
     }
 
     function currentLayerStyle() {
-        try {
-            return JSON.parse(shapeEditor.getStyleJson())
-        } catch (e) {
-            return {}
-        }
+        return shapeEditor.getStyleObject()
     }
 
     function originalLayerStyle() {
-        try {
-            return JSON.parse(root.originalStyleJson || '{}')
-        } catch (e) {
-            return {}
-        }
+        return root.originalStyleData || {}
     }
 
     function applyCurrentStyleToLayer() {
@@ -62,10 +55,11 @@ HusDrawer {
         root.editId = ""
         root.shapeType = shapeType
         root.originalStyleJson = '{}'
+        root.originalStyleData = {}
         root.saveSucceeded = false
-        shapeEditor.setStyleData('{}')
+        shapeEditor.setStyleObject({})
         dataEditor.airspaceName = ""
-        dataEditor.setPropertiesData('{}')
+        dataEditor.setPropertiesObject({})
         root.open()
     }
 
@@ -77,10 +71,11 @@ HusDrawer {
 
         root.shapeType = data.shapeType
         root.originalStyleJson = data.styleJson || '{}'
+        root.originalStyleData = data.styleData || {}
         root.saveSucceeded = false
         dataEditor.airspaceName = data.name
-        shapeEditor.setStyleData(data.styleJson)
-        dataEditor.setPropertiesData(data.propertiesJson)
+        shapeEditor.setStyleObject(data.styleData || {})
+        dataEditor.setPropertiesObject(data.propertiesData || {})
         root.open()
     }
 
@@ -173,18 +168,18 @@ HusDrawer {
                         type: HusButton.Type_Primary
                         enabled: dataEditor.airspaceName.length > 0
                         onClicked: {
-                            let styleJson = shapeEditor.getStyleJson()
-                            let propsJson = dataEditor.getPropertiesJson()
+                            let styleData = shapeEditor.getStyleObject()
+                            let propertiesData = dataEditor.getPropertiesObject()
 
                             if (root.editMode) {
                                 let data = AirspaceModel.getAirspace(root.editId)
-                                let updated = AirspaceModel.updateAirspace(
+                                let updated = AirspaceModel.updateAirspaceData(
                                     root.editId,
                                     dataEditor.airspaceName,
                                     root.shapeType,
-                                    data.geoJson,
-                                    styleJson,
-                                    propsJson
+                                    data.geoJsonObject || {},
+                                    styleData,
+                                    propertiesData
                                 )
                                 if (updated) {
                                     MapLibreEngine.updateLayerStyle(root.currentLayerId(), root.currentLayerStyle())
@@ -192,10 +187,10 @@ HusDrawer {
                                     root.saved(root.editId, false)
                                 }
                             } else {
-                                let uuid = DrawCtrl.saveAirspace(
+                                let uuid = DrawCtrl.saveAirspaceData(
                                     dataEditor.airspaceName,
-                                    styleJson,
-                                    propsJson
+                                    styleData,
+                                    propertiesData
                                 )
                                 if (uuid) {
                                     root.saveSucceeded = true

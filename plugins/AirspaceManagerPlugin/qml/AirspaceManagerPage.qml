@@ -42,44 +42,11 @@ Rectangle {
             // 将空域渲染到地图
             let data = AirspaceModel.getAirspace(airspaceId)
             if (data.id) {
-                let geoJson = JSON.parse(data.geoJson)
-                let style = JSON.parse(data.styleJson || '{}')
                 if (created) {
-                    MapLibreEngine.addGeoJSONLayer("airspace-" + data.id, geoJson, style)
+                    MapLibreEngine.addGeoJSONLayer("airspace-" + data.id, data.geoJsonObject || {}, data.styleData || {})
                 } else {
-                    MapLibreEngine.updateLayerStyle("airspace-" + data.id, style)
+                    MapLibreEngine.updateLayerStyle("airspace-" + data.id, data.styleData || {})
                 }
-            }
-        }
-    }
-
-    // 绘制完成 → 弹出编辑框
-    Connections {
-        target: DrawCtrl
-        function onDrawingCompleted(geoJson, shapeType) {
-            // 绘制完成后不再弹出编辑框，直接由右侧属性编辑框完成保存或应用操作
-            // 如果需要支持保存未命名的空域，可以在这里加默认逻辑，或在组件内部处理。
-            // 这里我们只需要移除预览图层，因为最终图层在保存时由 AirspaceInfoPanel 调用。
-            MapLibreEngine.removeLayer("airspace-preview")
-        }
-        function onDrawingCancelled() {
-            // 移除预览图层
-            MapLibreEngine.removeLayer("airspace-preview")
-        }
-        function onPreviewUpdated(geoJson) {
-            // 更新预览图层
-            if (Object.keys(geoJson).length > 0) {
-                let style = {
-                    "fill-color": "#1890ff",
-                    "fill-opacity": 0.2,
-                    "line-color": "#1890ff",
-                    "line-width": 2,
-                    "line-dasharray": [4, 4]
-                }
-                try {
-                    MapLibreEngine.removeLayer("airspace-preview")
-                } catch(e) {}
-                MapLibreEngine.addGeoJSONLayer("airspace-preview", geoJson, style)
             }
         }
     }

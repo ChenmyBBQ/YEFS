@@ -1,5 +1,11 @@
 #include "AirspaceModel.h"
+
+#include "AirspaceDisplayMapper.h"
+#include "AirspacePayloadConverter.h"
+#include "AirspaceRecordMapper.h"
+
 #include <QDebug>
+#include <QJsonDocument>
 
 AirspaceModel::AirspaceModel(AirspaceDatabase* db, QObject* parent)
     : QAbstractListModel(parent)
@@ -25,8 +31,11 @@ QVariant AirspaceModel::data(const QModelIndex& index, int role) const
     case ShapeTypeRole:      return r.shapeType;
     case ShapeTypeNameRole:  return shapeTypeName(r.shapeType);
     case GeoJsonRole:        return r.geoJson;
+    case GeoJsonObjectRole:  return AirspacePayloadConverter::parseMap(r.geoJson);
     case StyleJsonRole:      return r.styleJson;
+    case StyleDataRole:      return AirspacePayloadConverter::parseMap(r.styleJson);
     case PropertiesJsonRole: return r.propertiesJson;
+    case PropertiesDataRole: return AirspacePayloadConverter::parseMap(r.propertiesJson);
     case VisibleRole:        return r.visible;
     case CreatedAtRole:      return r.createdAt.toString("yyyy-MM-dd HH:mm");
     case UpdatedAtRole:      return r.updatedAt.toString("yyyy-MM-dd HH:mm");
@@ -42,8 +51,11 @@ QHash<int, QByteArray> AirspaceModel::roleNames() const
         { ShapeTypeRole,      "shapeType" },
         { ShapeTypeNameRole,  "shapeTypeName" },
         { GeoJsonRole,        "geoJson" },
+        { GeoJsonObjectRole,  "geoJsonObject" },
         { StyleJsonRole,      "styleJson" },
+        { StyleDataRole,      "styleData" },
         { PropertiesJsonRole, "propertiesJson" },
+        { PropertiesDataRole, "propertiesData" },
         { VisibleRole,        "visible" },
         { CreatedAtRole,      "createdAt" },
         { UpdatedAtRole,      "updatedAt" }
@@ -78,6 +90,25 @@ QString AirspaceModel::addAirspace(const QString& name, int shapeType,
     return uuid;
 }
 
+QString AirspaceModel::addAirspaceData(const QString& name, int shapeType,
+                                        const QVariantMap& geoJsonObject,
+                                        const QVariantMap& styleData,
+                                        const QVariantMap& propertiesData)
+{
+    return addAirspace(
+        name,
+        shapeType,
+    AirspacePayloadConverter::toCompactJson(geoJsonObject),
+    AirspacePayloadConverter::toCompactJson(styleData),
+    AirspacePayloadConverter::toCompactJson(propertiesData));
+}
+
+QString AirspaceModel::addAirspace(const AirspaceEntity& airspace)
+{
+    const AirspaceRecord record = AirspaceRecordMapper::toRecord(airspace);
+    return addAirspace(record.name, record.shapeType, record.geoJson, record.styleJson, record.propertiesJson);
+}
+
 bool AirspaceModel::updateAirspace(const QString& id,
                                     const QString& name, int shapeType,
                                     const QString& geoJson,
@@ -95,6 +126,28 @@ bool AirspaceModel::updateAirspace(const QString& id,
 
     emit airspaceUpdated(id);
     return true;
+}
+
+bool AirspaceModel::updateAirspaceData(const QString& id,
+                                        const QString& name, int shapeType,
+                                        const QVariantMap& geoJsonObject,
+                                        const QVariantMap& styleData,
+                                        const QVariantMap& propertiesData)
+{
+    return updateAirspace(
+        id,
+        name,
+        shapeType,
+        AirspacePayloadConverter::toCompactJson(geoJsonObject),
+        AirspacePayloadConverter::toCompactJson(styleData),
+        AirspacePayloadConverter::toCompactJson(propertiesData));
+}
+
+bool AirspaceModel::updateAirspace(const AirspaceEntity& airspace)
+{
+    const AirspaceRecord record = AirspaceRecordMapper::toRecord(airspace);
+    return updateAirspace(record.id, record.name, record.shapeType,
+        record.geoJson, record.styleJson, record.propertiesJson);
 }
 
 bool AirspaceModel::removeAirspace(const QString& id)
@@ -128,38 +181,27 @@ bool AirspaceModel::toggleVisibility(const QString& id)
 
 QVariantMap AirspaceModel::getAirspace(const QString& id) const
 {
-    int idx = findIndexById(id);
-    if (idx < 0) return {};
+    const AirspaceEntity entity = getAirspaceEntity(id);
+    if (entity.id.isEmpty()) {
+        return {};
+    }
 
-    const auto& r = m_records[idx];
-    return {
-        { "id",             r.id },
-        { "name",           r.name },
-        { "shapeType",      r.shapeType },
-        { "shapeTypeName",  shapeTypeName(r.shapeType) },
-        { "geoJson",        r.geoJson },
-        { "styleJson",      r.styleJson },
-        { "propertiesJson", r.propertiesJson },
-        { "visible",        r.visible },
-        { "createdAt",      r.createdAt.toString("yyyy-MM-dd HH:mm") },
-        { "updatedAt",      r.updatedAt.toString("yyyy-MM-dd HH:mm") }
-    };
+    return AirspaceDisplayMapper::toDisplayData(entity);
+}
+
+AirspaceEntity AirspaceModel::getAirspaceEntity(const QString& id) const
+{
+    int idx = findIndexById(id);
+    if (idx < 0) {
+        return {};
+    }
+
+    return AirspaceRecordMapper::toEntity(m_records[idx]);
 }
 
 QString AirspaceModel::shapeTypeName(int type)
 {
-    switch (type) {
-    case 0: return QStringLiteral("矩形");
-    case 1: return QStringLiteral("正方形");
-    case 2: return QStringLiteral("圆形");
-    case 3: return QStringLiteral("多边形");
-    case 4: return QStringLiteral("边界线");
-    case 5: return QStringLiteral("圆环");
-    case 6: return QStringLiteral("圆弧");
-    case 7: return QStringLiteral("扇形");
-    case 8: return QStringLiteral("扇环形");
-    default: return QStringLiteral("未知");
-    }
+    return airspaceShapeTypeDisplayName(airspaceShapeTypeFromInt(type));
 }
 
 int AirspaceModel::findIndexById(const QString& id) const

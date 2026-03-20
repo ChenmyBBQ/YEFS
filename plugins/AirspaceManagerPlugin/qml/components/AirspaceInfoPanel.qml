@@ -31,20 +31,18 @@ HusCard {
     property bool detailExpanded: false
 
     function triggerSave(complete) {
-        let styleJson = shapeEditor.getStyleJson()
-        let propsJson = dataEditor.getPropertiesJson()
+        let styleData = shapeEditor.getStyleObject()
+        let propertiesData = dataEditor.getPropertiesObject()
         
-        let uuid = DrawCtrl.saveAirspace(
+        let uuid = DrawCtrl.saveAirspaceData(
             dataEditor.airspaceName || '未命名空域_' + Date.now(),
-            styleJson,
-            propsJson
+            styleData,
+            propertiesData
         )
         if (uuid) {
             let data = AirspaceModel.getAirspace(uuid)
             if (data.id) {
-                let geoJson = JSON.parse(data.geoJson)
-                let style = JSON.parse(data.styleJson || '{}')
-                MapLibreEngine.addGeoJSONLayer('airspace-' + data.id, geoJson, style)
+                MapLibreEngine.addGeoJSONLayer('airspace-' + data.id, data.geoJsonObject || {}, data.styleData || {})
             }
         }
         if (complete) {

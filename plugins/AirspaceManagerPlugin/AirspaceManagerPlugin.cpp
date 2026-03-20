@@ -3,6 +3,7 @@
 #include "AirspaceModel.h"
 #include "ShapeGenerator.h"
 #include "DrawingController.h"
+#include "AirspaceMapLayerMapper.h"
 
 #include <QDebug>
 #include <QJsonDocument>
@@ -192,13 +193,14 @@ void AirspaceManagerPlugin::loadAirspacesToMap()
     auto* engine = m_context->getService("MapLibreEngine");
     if (!engine) return;
 
-    auto airspaces = m_database->getAllAirspaces();
-    for (const auto& a : airspaces) {
-        QJsonObject geoJson = QJsonDocument::fromJson(a.geoJson.toUtf8()).object();
-        QVariantMap style = QJsonDocument::fromJson(a.styleJson.toUtf8()).object().toVariantMap();
+    // Use AirspaceMapLayerMapper to avoid logic duplication
+    const auto airspaces = m_database->getAllAirspaceEntities();
+    for (const auto& airspace : airspaces) {
+        AirspaceLayerUpdate update = AirspaceMapLayerMapper::toLayerUpdate(airspace, false);
         QMetaObject::invokeMethod(engine, "addGeoJSONLayer",
-                                  Q_ARG(QString, "airspace-" + a.id),
-                                  Q_ARG(QJsonObject, geoJson),
-                                  Q_ARG(QVariantMap, style));
+                                  Q_ARG(QString, update.layerId),
+                                  Q_ARG(QJsonObject, update.geoJson),
+                                  Q_ARG(QVariantMap, update.style));
     }
 }
+#include "AirspaceMapLayerMapper.h" 

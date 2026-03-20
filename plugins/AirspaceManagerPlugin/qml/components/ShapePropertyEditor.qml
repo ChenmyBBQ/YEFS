@@ -26,6 +26,10 @@ ColumnLayout {
 
     signal styleChanged(var newStyle)
 
+    function getStyleObject() {
+        return styleData || {}
+    }
+
     function getStyleJson() {
         return JSON.stringify(styleData)
     }
@@ -33,14 +37,19 @@ ColumnLayout {
     function setStyleData(json) {
         try {
             let obj = JSON.parse(json)
-            styleData = obj
-            fillColorPicker.changeValue = obj["fill-color"] || "#3388ff"
-            fillOpacitySlider.value = (obj["fill-opacity"] || 0.3) * 100
-            lineColorPicker.changeValue = obj["line-color"] || "#3388ff"
-            lineWidthSlider.value = obj["line-width"] || 2
-            let dash = obj["line-dasharray"] || []
-            lineStyleSelect.currentIndex = dash.length > 0 ? (dash[0] === 4 ? 1 : 2) : 0
+            setStyleObject(obj)
         } catch(e) {}
+    }
+
+    function setStyleObject(obj) {
+        let next = obj || {}
+        styleData = next
+        fillColorPicker.changeValue = next["fill-color"] || "#3388ff"
+        fillOpacitySlider.value = (next["fill-opacity"] || 0.3) * 100
+        lineColorPicker.changeValue = next["line-color"] || "#3388ff"
+        lineWidthSlider.value = next["line-width"] || 2
+        let dash = next["line-dasharray"] || []
+        lineStyleSelect.currentIndex = dash.length > 0 ? (dash[0] === 4 ? 1 : 2) : 0
     }
 
     // 填充颜色

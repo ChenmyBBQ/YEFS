@@ -1,5 +1,7 @@
 #include "AirspaceDatabase.h"
 
+#include "AirspaceRecordMapper.h"
+
 #include <DBCompt.h>
 #include <QUuid>
 #include <QDebug>
@@ -92,6 +94,12 @@ QString AirspaceDatabase::addAirspace(const QString& name, int shapeType,
     return uuid;
 }
 
+QString AirspaceDatabase::addAirspace(const AirspaceEntity& airspace)
+{
+    const AirspaceRecord record = AirspaceRecordMapper::toRecord(airspace);
+    return addAirspace(record.name, record.shapeType, record.geoJson, record.styleJson, record.propertiesJson);
+}
+
 bool AirspaceDatabase::updateAirspace(const QString& id,
                                        const QString& name, int shapeType,
                                        const QString& geoJson,
@@ -118,6 +126,13 @@ bool AirspaceDatabase::updateAirspace(const QString& id,
     return true;
 }
 
+bool AirspaceDatabase::updateAirspace(const AirspaceEntity& airspace)
+{
+    const AirspaceRecord record = AirspaceRecordMapper::toRecord(airspace);
+    return updateAirspace(record.id, record.name, record.shapeType,
+        record.geoJson, record.styleJson, record.propertiesJson);
+}
+
 bool AirspaceDatabase::removeAirspace(const QString& id)
 {
     const QVariantMap cond{ { QStringLiteral("id"), id } };
@@ -138,6 +153,11 @@ AirspaceRecord AirspaceDatabase::getAirspace(const QString& id) const
     return rowToRecord(rows.first().toMap());
 }
 
+AirspaceEntity AirspaceDatabase::getAirspaceEntity(const QString& id) const
+{
+    return AirspaceRecordMapper::toEntity(getAirspace(id));
+}
+
 QList<AirspaceRecord> AirspaceDatabase::getAllAirspaces() const
 {
     const QVariantList rows = DBCompt::instance()->select(
@@ -148,6 +168,17 @@ QList<AirspaceRecord> AirspaceDatabase::getAllAirspaces() const
     for (const auto& rowVar : rows)
         list.append(rowToRecord(rowVar.toMap()));
     return list;
+}
+
+QList<AirspaceEntity> AirspaceDatabase::getAllAirspaceEntities() const
+{
+    const QList<AirspaceRecord> records = getAllAirspaces();
+    QList<AirspaceEntity> entities;
+    entities.reserve(records.size());
+    for (const AirspaceRecord& record : records) {
+        entities.append(AirspaceRecordMapper::toEntity(record));
+    }
+    return entities;
 }
 
 int AirspaceDatabase::count() const

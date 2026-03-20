@@ -4,6 +4,7 @@
 #include <QAbstractListModel>
 #include <QJsonObject>
 #include "AirspaceDatabase.h"
+#include "AirspaceTypes.h"
 
 /**
  * @brief 空域列表数据模型
@@ -22,8 +23,11 @@ public:
         ShapeTypeRole,
         ShapeTypeNameRole,
         GeoJsonRole,
+        GeoJsonObjectRole,
         StyleJsonRole,
+        StyleDataRole,
         PropertiesJsonRole,
+        PropertiesDataRole,
         VisibleRole,
         CreatedAtRole,
         UpdatedAtRole
@@ -44,6 +48,12 @@ public:
                                      const QString& geoJson,
                                      const QString& styleJson,
                                      const QString& propertiesJson);
+    Q_INVOKABLE QString addAirspaceData(const QString& name, int shapeType,
+                                         const QVariantMap& geoJsonObject,
+                                         const QVariantMap& styleData,
+                                         const QVariantMap& propertiesData);
+
+    QString addAirspace(const AirspaceEntity& airspace);
 
     /// 更新空域
     Q_INVOKABLE bool updateAirspace(const QString& id,
@@ -51,6 +61,13 @@ public:
                                      const QString& geoJson,
                                      const QString& styleJson,
                                      const QString& propertiesJson);
+    Q_INVOKABLE bool updateAirspaceData(const QString& id,
+                                         const QString& name, int shapeType,
+                                         const QVariantMap& geoJsonObject,
+                                         const QVariantMap& styleData,
+                                         const QVariantMap& propertiesData);
+
+    bool updateAirspace(const AirspaceEntity& airspace);
 
     /// 删除空域
     Q_INVOKABLE bool removeAirspace(const QString& id);
@@ -60,6 +77,7 @@ public:
 
     /// 获取指定空域数据 (返回 QVariantMap 供 QML 使用)
     Q_INVOKABLE QVariantMap getAirspace(const QString& id) const;
+    AirspaceEntity getAirspaceEntity(const QString& id) const;
 
     /// 获取形状类型名称
     Q_INVOKABLE static QString shapeTypeName(int type);

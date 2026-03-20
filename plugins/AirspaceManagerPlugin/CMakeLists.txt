@@ -14,12 +14,26 @@ find_package(Qt6 6.5 REQUIRED COMPONENTS Quick Positioning)
 add_library(${PROJECT_NAME} MODULE
     AirspaceManagerPlugin.h
     AirspaceManagerPlugin.cpp
+    AirspaceDisplayMapper.h
+    AirspaceDisplayMapper.cpp
+    AirspaceDraftValidator.h
+    AirspaceDraftValidator.cpp
+    AirspaceMapLayerMapper.h
+    AirspaceMapLayerMapper.cpp
+    AirspacePayloadConverter.h
+    AirspacePayloadConverter.cpp
     AirspaceSelectionController.h
     AirspaceSelectionController.cpp
     AirspaceDatabase.h
     AirspaceDatabase.cpp
+    AirspaceGeometryConverter.h
+    AirspaceGeometryConverter.cpp
     AirspaceModel.h
     AirspaceModel.cpp
+    AirspaceRecordMapper.h
+    AirspaceRecordMapper.cpp
+    AirspaceTypes.h
+    AirspaceTypes.cpp
     ShapeGenerator.h
     ShapeGenerator.cpp
     DrawingController.h

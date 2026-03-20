@@ -1,19 +1,12 @@
 #include "AirspaceSelectionController.h"
 
+#include "AirspaceMapLayerMapper.h"
 #include "AirspaceModel.h"
 #include "IPlugin.h"
 
-#include <QJsonDocument>
-#include <QJsonObject>
 #include <QMetaObject>
-#include <QVariantList>
 
 namespace {
-
-QString layerIdForAirspace(const QString& airspaceId)
-{
-    return QStringLiteral("airspace-") + airspaceId;
-}
 
 QString resolveAirspaceIdFromResult(const QVariantMap& result)
 {
@@ -139,31 +132,28 @@ QVariantMap AirspaceSelectionController::buildAirspaceData(const QString& airspa
         return {};
     }
 
-    data[QStringLiteral("layerId")] = layerIdForAirspace(airspaceId);
+    data[QStringLiteral("layerId")] = AirspaceMapLayerMapper::layerId(airspaceId);
     data[QStringLiteral("businessObjectId")] = airspaceId;
-
-    const QJsonObject properties = QJsonDocument::fromJson(
-        data.value(QStringLiteral("propertiesJson")).toString().toUtf8()).object();
-    data[QStringLiteral("properties")] = properties.toVariantMap();
     return data;
 }
 
 QVariantMap AirspaceSelectionController::baseStyleForAirspace(const QString& airspaceId) const
 {
-    const QVariantMap data = buildAirspaceData(airspaceId);
-    const QByteArray json = data.value(QStringLiteral("styleJson")).toString().toUtf8();
-    return QJsonDocument::fromJson(json).object().toVariantMap();
+    if (!m_model) {
+        return {};
+    }
+
+    const AirspaceEntity entity = m_model->getAirspaceEntity(airspaceId);
+    if (entity.id.isEmpty()) {
+        return {};
+    }
+
+    return AirspaceMapLayerMapper::baseStyle(entity);
 }
 
 QVariantMap AirspaceSelectionController::highlightedStyle(const QVariantMap& baseStyle) const
 {
-    QVariantMap style = baseStyle;
-    style[QStringLiteral("fill-color")] = style.value(QStringLiteral("fill-color"), QStringLiteral("#3388ff"));
-    style[QStringLiteral("fill-opacity")] = 0.45;
-    style[QStringLiteral("line-color")] = QStringLiteral("#ff8c1a");
-    style[QStringLiteral("line-width")] = 4;
-    style[QStringLiteral("line-dasharray")] = QVariantList{};
-    return style;
+    return AirspaceMapLayerMapper::highlightedStyle(baseStyle);
 }
 
 void AirspaceSelectionController::applySelectionStyle(const QString& airspaceId, bool selected)
@@ -177,21 +167,17 @@ void AirspaceSelectionController::applySelectionStyle(const QString& airspaceId,
         return;
     }
 
-    const QVariantMap data = buildAirspaceData(airspaceId);
-    if (data.isEmpty()) {
+    const AirspaceEntity entity = m_model->getAirspaceEntity(airspaceId);
+    if (entity.id.isEmpty()) {
         return;
     }
 
-    const QJsonObject geoJson = QJsonDocument::fromJson(
-        data.value(QStringLiteral("geoJson")).toString().toUtf8()).object();
-    const QVariantMap style = selected
-        ? highlightedStyle(baseStyleForAirspace(airspaceId))
-        : baseStyleForAirspace(airspaceId);
+    const AirspaceLayerUpdate layerUpdate = AirspaceMapLayerMapper::toLayerUpdate(entity, selected);
 
     QMetaObject::invokeMethod(engine, "updateGeoJSONLayer",
-        Q_ARG(QString, layerIdForAirspace(airspaceId)),
-        Q_ARG(QJsonObject, geoJson),
-        Q_ARG(QVariantMap, style));
+        Q_ARG(QString, layerUpdate.layerId),
+        Q_ARG(QJsonObject, layerUpdate.geoJson),
+        Q_ARG(QVariantMap, layerUpdate.style));
 }
 
 void AirspaceSelectionController::emitSelectionChangedIfNeeded(const QString& previousId,

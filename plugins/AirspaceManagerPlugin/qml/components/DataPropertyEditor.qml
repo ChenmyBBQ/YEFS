@@ -25,27 +25,36 @@ ColumnLayout {
 
     signal dataChanged()
 
-    function getPropertiesJson() {
-        return JSON.stringify({
+    function getPropertiesObject() {
+        return {
             "airspaceType": airspaceType,
             "minAltitude": minAltitude,
             "maxAltitude": maxAltitude,
             "effectiveTime": effectiveTime,
             "expirationTime": expirationTime,
             "remarks": remarks
-        })
+        }
+    }
+
+    function getPropertiesJson() {
+        return JSON.stringify(getPropertiesObject())
     }
 
     function setPropertiesData(json) {
         try {
             let obj = JSON.parse(json)
-            airspaceType = obj.airspaceType || 0
-            minAltitude = obj.minAltitude || 0
-            maxAltitude = obj.maxAltitude || 1000
-            effectiveTime = obj.effectiveTime || ""
-            expirationTime = obj.expirationTime || ""
-            remarks = obj.remarks || ""
+            setPropertiesObject(obj)
         } catch(e) {}
+    }
+
+    function setPropertiesObject(obj) {
+        let next = obj || {}
+        airspaceType = next.airspaceType || 0
+        minAltitude = next.minAltitude || 0
+        maxAltitude = next.maxAltitude || 1000
+        effectiveTime = next.effectiveTime || ""
+        expirationTime = next.expirationTime || ""
+        remarks = next.remarks || ""
     }
 
     // 空域名称

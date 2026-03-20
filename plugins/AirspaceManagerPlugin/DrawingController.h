@@ -5,6 +5,9 @@
 #include <QVariantList>
 #include <QJsonObject>
 
+#include "AirspaceGeometryConverter.h"
+#include "AirspaceTypes.h"
+
 class ShapeGenerator;
 class AirspaceModel;
 
@@ -38,11 +41,11 @@ public:
                                 QObject* parent = nullptr);
 
     int drawingState() const { return m_state; }
-    int currentShapeType() const { return m_shapeType; }
-    int pointCount() const { return m_points.size(); }
+    int currentShapeType() const { return airspaceShapeTypeToInt(m_draft.geometry.shapeType); }
+    int pointCount() const { return m_draft.geometry.controlPoints.size(); }
     int requiredPoints() const;
     QString statusText() const { return m_statusText; }
-    QVariantMap currentShapeInfo() const { return m_currentShapeInfo; }
+    QVariantMap currentShapeInfo() const { return m_draft.shapeInfo; }
 
     /// 开始绘制指定形状
     Q_INVOKABLE void startDrawing(int shapeType);
@@ -60,15 +63,18 @@ public:
     Q_INVOKABLE void cancel();
 
     /// 获取当前预览 GeoJSON
-    Q_INVOKABLE QJsonObject previewGeoJson() const { return m_previewGeoJson; }
+    Q_INVOKABLE QJsonObject previewGeoJson() const { return m_geometryConverter.buildPreview(m_draft).geoJson; }
 
     /// 获取收集到的点 (供 QML 使用)
-    Q_INVOKABLE QVariantList collectedPoints() const { return m_points; }
+    Q_INVOKABLE QVariantList collectedPoints() const { return m_draft.collectedPoints(); }
 
     /// 保存到模型并返回 UUID
     Q_INVOKABLE QString saveAirspace(const QString& name,
                                       const QString& styleJson,
                                       const QString& propertiesJson);
+    Q_INVOKABLE QString saveAirspaceData(const QString& name,
+                                          const QVariantMap& styleData,
+                                          const QVariantMap& propertiesData);
 
 signals:
     void drawingStateChanged(int state);
@@ -101,24 +107,13 @@ private:
     void setStatusText(const QString& text);
 
     /// 不同形状需要的最少点数 (-1 表示可变长)
-    int minPointsForShape() const;
-
-    /// Haversine 距离 (米)
-    static double haversineDistance(double lat1, double lng1, double lat2, double lng2);
-    /// 方位角 (度)
-    static double bearingTo(double lat1, double lng1, double lat2, double lng2);
-
     ShapeGenerator* m_shapeGen;
     AirspaceModel*  m_model;
+    AirspaceGeometryConverter m_geometryConverter;
 
     DrawingState m_state      = Idle;
-    int          m_shapeType  = -1;
-    QVariantList m_points;      // [[lat,lng], ...]
-    QVariantList m_hoverPoint;  // [lat,lng]
-    bool         m_hasHoverPoint = false;
-    QJsonObject  m_previewGeoJson;
+    AirspaceDraft m_draft;
     QString      m_statusText;
-    QVariantMap  m_currentShapeInfo;
 };
 
 #endif // DRAWINGCONTROLLER_H

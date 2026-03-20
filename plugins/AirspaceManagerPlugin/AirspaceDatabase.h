@@ -6,20 +6,7 @@
 #include <QList>
 #include <QDateTime>
 
-/**
- * @brief 空域形状类型枚举
- */
-enum class ShapeType {
-    Rectangle  = 0,
-    Square     = 1,
-    Circle     = 2,
-    Polygon    = 3,
-    Boundary   = 4,
-    Ring       = 5,
-    Arc        = 6,
-    Sector     = 7,
-    SectorRing = 8
-};
+#include "AirspaceTypes.h"
 
 /**
  * @brief 空域数据记录
@@ -57,15 +44,21 @@ public:
                                      const QString& styleJson,
                                      const QString& propertiesJson);
 
+    QString addAirspace(const AirspaceEntity& airspace);
+
     Q_INVOKABLE bool updateAirspace(const QString& id,
                                      const QString& name, int shapeType,
                                      const QString& geoJson,
                                      const QString& styleJson,
                                      const QString& propertiesJson);
 
+    bool updateAirspace(const AirspaceEntity& airspace);
+
     Q_INVOKABLE bool removeAirspace(const QString& id);
     Q_INVOKABLE AirspaceRecord getAirspace(const QString& id) const;
+    AirspaceEntity getAirspaceEntity(const QString& id) const;
     QList<AirspaceRecord> getAllAirspaces() const;
+    QList<AirspaceEntity> getAllAirspaceEntities() const;
     Q_INVOKABLE int  count() const;
     Q_INVOKABLE bool setVisible(const QString& id, bool visible);
     Q_INVOKABLE bool clearAll();
