@@ -1,5 +1,9 @@
 # YEFS C++ 编程规范 (基于 C++ Core Guidelines 与 Qt6 适配)
 
+## 文档定位
+- 本文档是 C++ 细化规则，主要补充 .github/instructions/cpp.instructions.md 未展开的实现细节。
+- 处理非 C++ 文件或纯工作流问题时，不应把本文档当作默认总规则。
+
 当前项目是基于 Qt6/QML/C++ 的桌面 GIS 应用。核心的 C++ 逻辑代码需遵循现代 C++ (C++17/20) 标准（源于 [C++ Core Guidelines](https://isocpp.github.io/CppCoreGuidelines/CppCoreGuidelines)），同时必须兼顾 Qt 框架的特有机制（如信号槽、对象树等）。
 
 ## 1. 核心与跨领域原则 (Cross-Cutting Principles)

@@ -1,6 +1,6 @@
 ---
 name: YEFS 验证规则
-description: 测试、构建与回归说明规则
+description: "Use when: building, compiling, testing, running, validating changes, describing regression coverage, CMake Tools, CTest, manual verification for QML or core changes"
 applyTo: "**"
 ---
 

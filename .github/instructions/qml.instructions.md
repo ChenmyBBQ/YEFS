@@ -1,6 +1,6 @@
 ---
 name: YEFS QML 规则
-description: Qt6/QML 与 HuskarUI 页面开发规则
+description: "Use when: editing QML pages, navigation, HuskarUI components, Main.qml, YefsGlobal.qml, layouts, interactions, page composition in src/qml or plugin qml"
 applyTo: "{src/qml/**,plugins/**/qml/**,reference/qml/**}/**/*.qml"
 ---
 

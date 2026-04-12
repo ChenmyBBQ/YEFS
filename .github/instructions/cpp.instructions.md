@@ -1,6 +1,6 @@
 ---
 name: YEFS C++ 规则
-description: C++ 核心逻辑、内存管理与接口修改规则
+description: "Use when: editing C++ core logic, QObject lifecycle, ownership, resource management, function signatures, symbol rename, C++ APIs in src or plugins"
 applyTo: "{src/**,plugins/**}/**/*.{h,hpp,c,cc,cpp,cxx}"
 ---
 

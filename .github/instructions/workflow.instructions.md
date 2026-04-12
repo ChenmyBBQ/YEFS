@@ -1,6 +1,6 @@
 ---
 name: YEFS 修复流程
-description: 缺陷排查、根因定位与修改边界规则
+description: "Use when: diagnosing bugs, crashes, abnormal behavior, blockers, log analysis, root cause analysis, fix workflow, deciding edit scope and confirmation boundary"
 applyTo: "**"
 ---
 

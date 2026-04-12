@@ -1,5 +1,9 @@
 # 整体架构设计
 
+## 文档定位
+- 本文档是架构背景与模块边界说明，供 .github/copilot-instructions.md 与 .github/instructions/*.instructions.md 引用。
+- 本文档用于补充架构细节，不单独承担仓库级硬性约束。
+
 ## 项目定位
 - YEFS 是基于 Qt6/QML 的 GIS 地面站应用。
 - 当前主架构是本地桌面应用，不是前后端分离 Web 系统。

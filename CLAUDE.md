@@ -7,8 +7,13 @@ Follow these rules:
 - Respond in Chinese by default, including explanations, plans, commit messages, and code comments.
 - Do not introduce changes that break the Qt6/QML/C++ desktop GIS architecture.
 - Diagnose root cause before editing code; avoid superficial fixes.
+- The startup entry is src/cpp/main.cpp and the application loads Main.qml; new pages should integrate with the existing menu-driven navigation.
+- Keep the main layering stable: src/core for core logic, src/qml for UI, plugins for extensions, and 3rdparty as external dependencies.
+- Do not push complex business logic into QML; prefer existing C++ controllers, models, MessageBus, SettingsManager, and PluginManager.
 - For QML, UI, navigation, and HuskarUI work, follow [.github/instructions/qml.instructions.md](.github/instructions/qml.instructions.md).
 - For C++ core logic, ownership, lifecycle, and API changes, follow [.github/instructions/cpp.instructions.md](.github/instructions/cpp.instructions.md).
 - For testing, build, and validation expectations, follow [.github/instructions/testing.instructions.md](.github/instructions/testing.instructions.md).
 - For bug fixing workflow and troubleshooting, follow [.github/instructions/workflow.instructions.md](.github/instructions/workflow.instructions.md).
+- Only apply [.github/copilot/frontend-rules.md](.github/copilot/frontend-rules.md) when the task truly involves a separate Web frontend subproject.
+- Only apply [.github/copilot/backend-rules.md](.github/copilot/backend-rules.md) when the task truly involves a separate Go/Node.js service or toolchain.
 - Architecture background is in [.github/copilot/architecture.md](.github/copilot/architecture.md).
