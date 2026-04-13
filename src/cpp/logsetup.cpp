@@ -106,4 +106,9 @@ void initialize()
     std::atexit(closeLogFile);
 }
 
+void shutdown()
+{
+    closeLogFile();
+}
+
 } // namespace YEFS::LogSetup

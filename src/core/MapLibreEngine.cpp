@@ -117,7 +117,10 @@ MapLibreEngine* MapLibreEngine::create(QQmlEngine* qmlEngine, QJSEngine* jsEngin
 {
     Q_UNUSED(qmlEngine)
     Q_UNUSED(jsEngine)
-    return instance();
+    auto* inst = instance();
+    // 保持 C++ 侧所有权，防止 QML 引擎析构时重复释放
+    QJSEngine::setObjectOwnership(inst, QJSEngine::CppOwnership);
+    return inst;
 }
 
 void MapLibreEngine::destroy()

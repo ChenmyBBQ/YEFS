@@ -15,7 +15,9 @@ SettingsManager* SettingsManager::create(QQmlEngine *qmlEngine, QJSEngine *jsEng
 {
     Q_UNUSED(qmlEngine)
     Q_UNUSED(jsEngine)
-    return instance();
+    auto *inst = instance();
+    QJSEngine::setObjectOwnership(inst, QJSEngine::CppOwnership);
+    return inst;
 }
 
 void SettingsManager::destroy()

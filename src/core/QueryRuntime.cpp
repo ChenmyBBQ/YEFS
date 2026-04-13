@@ -270,7 +270,9 @@ QueryRuntime* QueryRuntime::create(QQmlEngine* qmlEngine, QJSEngine* jsEngine)
 {
     Q_UNUSED(qmlEngine)
     Q_UNUSED(jsEngine)
-    return instance();
+    auto *inst = instance();
+    QJSEngine::setObjectOwnership(inst, QJSEngine::CppOwnership);
+    return inst;
 }
 
 void QueryRuntime::destroy()

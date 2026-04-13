@@ -13,7 +13,9 @@ NerdIcon *NerdIcon::instance()
 
 NerdIcon *NerdIcon::create(QQmlEngine * /*qmlEngine*/, QJSEngine * /*jsEngine*/)
 {
-    return instance();
+    auto *inst = instance();
+    QJSEngine::setObjectOwnership(inst, QJSEngine::CppOwnership);
+    return inst;
 }
 
 void NerdIcon::destroy()
